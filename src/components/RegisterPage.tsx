@@ -29,14 +29,21 @@ export default function RegisterPage({ onSwitchToLogin }: { onSwitchToLogin: () 
     }
 
     setLoading(true);
-    const { error } = await signUp(email, password, fullName, role, phone);
+    const { error, requiresEmailConfirmation } = await signUp(email, password, fullName, role, phone);
     
     if (error) {
       setError(error.message === 'User already registered'
         ? 'Questo indirizzo email è già registrato.'
         : error.message);
     } else {
-      setSuccess(true);
+      if (requiresEmailConfirmation) {
+        // Email confirmation required
+        setSuccess(true);
+      } else {
+        // No email confirmation needed, user is already logged in
+        // The AuthProvider will handle the redirect automatically
+        onSwitchToLogin();
+      }
     }
     setLoading(false);
   };

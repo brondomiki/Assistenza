@@ -19,7 +19,10 @@
 
 1. Vai su **Authentication > Providers**
 2. Assicurati che **Email** sia abilitato
-3. Opzionale: disabilita "Confirm email" per test rapido (sconsigliato in produzione)
+3. **IMPORTANTE**: Disabilita "Confirm email" per permettere la registrazione senza conferma email
+   - Vai su **Authentication > Providers > Email**
+   - Trova l'opzione "Confirm email" e disabilitala
+   - Salva le modifiche
 4. Vai su **Authentication > URL Configuration** e imposta il Site URL al tuo dominio Vercel
 
 ## Passo 4: Configurare le variabili d'ambiente
