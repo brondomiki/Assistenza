@@ -103,7 +103,7 @@ src/
 
 - **Superuser**: Accesso completo, gestione utenti, modifica ruoli
 - **Badante**: Gestisce il calendario della propria disponibilità
-  - **Disponibilità automatica**: Al momento della registrazione, viene impostata automaticamente come disponibile dal lunedì al sabato (08:00-12:00) per i prossimi 12 mesi
+  - **Disponibilità automatica**: Al momento della registrazione, viene impostata automaticamente come disponibile 24 ore (00:00-23:59) dal lunedì al sabato per i prossimi 12 mesi
   - **Estensione automatica**: Quando si naviga nel calendario verso mesi futuri, le disponibilità vengono estese automaticamente per garantire copertura continua
   - La badante può modificare o rimuovere singole giornate secondo necessità
 - **Familiare**: Gestisce la disponibilità nei weekend e festivi
