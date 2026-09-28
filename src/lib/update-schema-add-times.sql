@@ -18,6 +18,11 @@ ALTER TABLE family_availability ADD COLUMN IF NOT EXISTS end_time TIME;
 -- Aggiunge il campo avatar alla tabella profili
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS avatar TEXT;
 
+-- Aggiunge la policy per permettere l'eliminazione del proprio profilo
+DROP POLICY IF EXISTS "Gli utenti possono eliminare il proprio profilo" ON profiles;
+CREATE POLICY "Gli utenti possono eliminare il proprio profilo" ON profiles
+  FOR DELETE USING (auth.uid() = id);
+
 -- ============================================
 -- SICUREZZA: Impedisce a un membro di modificare
 -- gli inserimenti di altri membri

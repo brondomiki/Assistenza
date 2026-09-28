@@ -74,6 +74,9 @@ CREATE POLICY "Gli utenti possono modificare il proprio profilo" ON profiles
 CREATE POLICY "Gli utenti possono inserire il proprio profilo" ON profiles
   FOR INSERT WITH CHECK (auth.uid() = id);
 
+CREATE POLICY "Gli utenti possono eliminare il proprio profilo" ON profiles
+  FOR DELETE USING (auth.uid() = id);
+
 -- Policy per caregiver_availability
 CREATE POLICY "Chiunque può vedere la disponibilità badanti" ON caregiver_availability
   FOR SELECT USING (true);
