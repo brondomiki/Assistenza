@@ -104,7 +104,10 @@ src/
 
 - **Superuser**: Accesso completo, gestione utenti, modifica ruoli
 - **Badante**: Gestisce il calendario della propria disponibilità
-  - **Disponibilità automatica precompilata**: Al momento della registrazione, viene impostata automaticamente come disponibile dal lunedì al sabato (00:00-12:00, fino a mezzogiorno) per i prossimi 12 mesi
+  - **Disponibilità automatica precompilata**: Al momento della registrazione, viene impostata automaticamente come disponibile per i prossimi 12 mesi:
+    - **Lunedì-Venerdì**: 00:00-24:00 (24 ore complete)
+    - **Sabato**: 00:00-12:00 (fino a mezzogiorno)
+    - **Domenica**: nessuna disponibilità automatica
   - **Estensione automatica**: Quando si naviga nel calendario verso mesi futuri, le disponibilità vengono estese automaticamente per garantire copertura continua
   - **Limitazioni**: La badante NON può modificare le disponibilità precompilate, può SOLO inserire "non disponibilità" per giorni specifici
   - **Ripristino**: Se la badante inserisce una "non disponibilità", può successivamente ripristinare la disponibilità automatica

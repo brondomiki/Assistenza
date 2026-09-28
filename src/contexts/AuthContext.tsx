@@ -66,7 +66,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function createDefaultCaregiverAvailability(userId: string) {
     // Crea disponibilità di default per i prossimi 12 mesi
-    // Lunedì-Sabato: 00:00-12:00 (fino a mezzogiorno)
+    // Lunedì-Venerdì: 00:00-23:59 (24 ore)
+    // Sabato: 00:00-12:00 (fino a mezzogiorno)
+    // Domenica: nessuna disponibilità
     const today = new Date();
     const startDate = startOfMonth(today);
     const endDate = addMonths(startDate, 12);
@@ -74,14 +76,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const allDays = eachDayOfInterval({ start: startDate, end: endDate });
 
     const availabilities = allDays
-      .filter(day => !isSunday(day)) // Escludi domenica
-      .map(day => ({
-        user_id: userId,
-        date: format(day, 'yyyy-MM-dd'),
-        status: 'disponibile' as const,
-        start_time: '00:00',
-        end_time: '12:00',
-      }));
+      .filter(day => day.getDay() !== 0) // Escludi domenica (0 = domenica)
+      .map(day => {
+        const dayOfWeek = day.getDay(); // 1=Lun, 2=Mar, ..., 5=Ven, 6=Sab
+        const isSaturday = dayOfWeek === 6;
+        
+        return {
+          user_id: userId,
+          date: format(day, 'yyyy-MM-dd'),
+          status: 'disponibile' as const,
+          start_time: '00:00',
+          end_time: isSaturday ? '12:00' : '23:59',
+        };
+      });
 
     if (availabilities.length > 0) {
       // Inserisci in batch (Supabase ha limiti di dimensioni)
