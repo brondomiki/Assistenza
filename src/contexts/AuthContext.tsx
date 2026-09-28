@@ -1,6 +1,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { supabase, Profile, UserRole } from '../lib/supabase';
 import { User, Session } from '@supabase/supabase-js';
+import { startOfMonth, endOfMonth, eachDayOfInterval, format, isSunday } from 'date-fns';
 
 interface AuthContextType {
   user: User | null;
@@ -62,6 +63,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   }
 
+  async function createDefaultCaregiverAvailability(userId: string) {
+    // Crea disponibilità di default per il mese corrente
+    // Lunedì-Sabato: 08:00-12:00
+    const today = new Date();
+    const monthStart = startOfMonth(today);
+    const monthEnd = endOfMonth(today);
+    const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
+
+    const availabilities = days
+      .filter(day => !isSunday(day)) // Escludi domenica
+      .map(day => ({
+        user_id: userId,
+        date: format(day, 'yyyy-MM-dd'),
+        status: 'disponibile' as const,
+        start_time: '08:00',
+        end_time: '12:00',
+      }));
+
+    if (availabilities.length > 0) {
+      await supabase.from('caregiver_availability').insert(availabilities);
+    }
+  }
+
   async function signUp(email: string, password: string, fullName: string, role: UserRole, phone?: string, avatar?: string) {
     const metaData = { full_name: fullName, role: role };
     const signUpOptions = { data: metaData };
@@ -87,6 +111,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (Object.keys(updates).length > 0) {
         await supabase.from('profiles').update(updates).eq('id', data.user.id);
+      }
+
+      // Se è una badante, crea disponibilità di default (lun-sab 08:00-12:00)
+      if (role === 'badante') {
+        try {
+          await createDefaultCaregiverAvailability(data.user.id);
+        } catch (err) {
+          console.error('Errore nella creazione disponibilità default:', err);
+        }
       }
     }
 
