@@ -38,6 +38,7 @@ interface DayEntry {
   notes?: string;
   type: 'badante' | 'familiare';
   full_name: string;
+  avatar?: string;
 }
 
 export default function Dashboard() {
@@ -92,12 +93,12 @@ export default function Dashboard() {
 
     const { data: caregiverToday } = await supabase
       .from('caregiver_availability')
-      .select('*, profiles(full_name)')
+      .select('*, profiles(full_name, avatar)')
       .eq('date', today);
 
     const { data: familyToday } = await supabase
       .from('family_availability')
-      .select('*, profiles(full_name)')
+      .select('*, profiles(full_name, avatar)')
       .eq('date', today);
 
     const overview = [
@@ -114,13 +115,13 @@ export default function Dashboard() {
 
     const { data: caregiverData } = await supabase
       .from('caregiver_availability')
-      .select('*, profiles(full_name)')
+      .select('*, profiles(full_name, avatar)')
       .gte('date', monthStart)
       .lte('date', monthEnd);
 
     const { data: familyData } = await supabase
       .from('family_availability')
-      .select('*, profiles(full_name)')
+      .select('*, profiles(full_name, avatar)')
       .gte('date', monthStart)
       .lte('date', monthEnd);
 
@@ -129,11 +130,13 @@ export default function Dashboard() {
         ...d,
         type: 'badante' as const,
         full_name: (d.profiles as any)?.full_name || 'Utente',
+        avatar: (d.profiles as any)?.avatar || null,
       })),
       ...(familyData || []).map((d) => ({
         ...d,
         type: 'familiare' as const,
         full_name: (d.profiles as any)?.full_name || 'Utente',
+        avatar: (d.profiles as any)?.avatar || null,
       })),
     ];
 
@@ -270,8 +273,10 @@ export default function Dashboard() {
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span>{item.type === 'badante' ? '👩‍⚕️' : '👨‍👩‍👧'}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-3xl">
+                      {(item.profiles as any)?.avatar || '👤'}
+                    </span>
                     <span className="font-medium text-white">
                       {(item.profiles as any)?.full_name}
                     </span>
@@ -368,17 +373,16 @@ export default function Dashboard() {
                     {format(day, 'd')}
                   </span>
                   {entries.length > 0 && (
-                    <div className="mt-1 space-y-0.5">
-                      {/* Icone membri */}
+                    <div className="mt-1 space-y-1">
+                      {/* Avatar membri */}
                       <div className="flex items-center gap-1 flex-wrap">
                         {entries.filter(e => e.status === 'disponibile').slice(0, 3).map((e, i) => (
                           <span
                             key={i}
-                            className={`text-[10px] px-1 py-0.5 rounded-full ${
-                              e.type === 'badante' ? 'bg-green-500 text-white' : 'bg-purple-500 text-white'
-                            }`}
+                            className="text-lg"
+                            title={e.full_name}
                           >
-                            {e.type === 'badante' ? '👩' : '👨'}
+                            {e.avatar || (e.type === 'badante' ? '👩‍⚕️' : '👤')}
                           </span>
                         ))}
                         {entries.filter(e => e.status === 'disponibile').length > 3 && (
@@ -393,7 +397,7 @@ export default function Dashboard() {
                           <div key={i} className="text-[9px] font-medium leading-tight truncate">
                             {e.start_time && e.end_time && (
                               <span className={`${e.status === 'disponibile' ? 'text-white' : 'text-red-300'}`}>
-                                {e.type === 'badante' ? '👩' : '👨'} {e.start_time}-{e.end_time}
+                                {e.start_time}-{e.end_time}
                               </span>
                             )}
                           </div>
@@ -487,7 +491,12 @@ export default function Dashboard() {
                             }`}
                           >
                             <div className="flex items-center justify-between mb-2">
-                              <span className="font-semibold text-white">{entry.full_name}</span>
+                              <div className="flex items-center gap-3">
+                                <span className="text-4xl">
+                                  {entry.avatar || '👤'}
+                                </span>
+                                <span className="font-semibold text-white">{entry.full_name}</span>
+                              </div>
                               <span
                                 className={`px-3 py-1 rounded-full text-sm font-medium ${
                                   entry.status === 'disponibile'
@@ -532,7 +541,12 @@ export default function Dashboard() {
                             }`}
                           >
                             <div className="flex items-center justify-between mb-2">
-                              <span className="font-semibold text-white">{entry.full_name}</span>
+                              <div className="flex items-center gap-3">
+                                <span className="text-4xl">
+                                  {entry.avatar || '👤'}
+                                </span>
+                                <span className="font-semibold text-white">{entry.full_name}</span>
+                              </div>
                               <span
                                 className={`px-3 py-1 rounded-full text-sm font-medium ${
                                   entry.status === 'disponibile'
