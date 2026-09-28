@@ -15,6 +15,7 @@ import {
   isWeekend,
 } from 'date-fns';
 import { it } from 'date-fns/locale';
+import { extendCaregiverAvailability } from '../lib/availabilityExtender';
 
 export default function CaregiverCalendar() {
   const { user, profile } = useAuth();
@@ -33,6 +34,8 @@ export default function CaregiverCalendar() {
     if (user) {
       fetchMyAvailability();
       fetchAllAvailability();
+      // Estendi automaticamente le disponibilità per i mesi futuri
+      extendCaregiverAvailability(user.id, currentMonth);
     }
   }, [user, currentMonth]);
 

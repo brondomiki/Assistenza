@@ -15,6 +15,7 @@ import {
   subMonths,
 } from 'date-fns';
 import { it } from 'date-fns/locale';
+import { extendCaregiverAvailability } from '../lib/availabilityExtender';
 
 // Italian public holidays
 function isItalianHoliday(date: Date): boolean {
@@ -61,6 +62,8 @@ export default function Dashboard() {
       fetchStats();
       fetchTodayOverview();
       fetchAllEntries();
+      // Estendi automaticamente le disponibilità per i mesi futuri
+      extendCaregiverAvailability(user.id, currentMonth);
     }
   }, [user, currentMonth]);
 
