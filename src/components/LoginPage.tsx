@@ -29,7 +29,7 @@ export default function LoginPage({ onSwitchToRegister }: { onSwitchToRegister: 
           <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-100 rounded-full mb-4">
             <span className="text-3xl">🏠</span>
           </div>
-          <h1 className="text-2xl font-bold text-gray-800">CareScheduler</h1>
+          <h1 className="text-2xl font-bold text-gray-800">Assistenza Anziani</h1>
           <p className="text-gray-500 mt-2">Gestione disponibilità assistenza</p>
         </div>
 

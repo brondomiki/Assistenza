@@ -1,6 +1,6 @@
-# 📋 GUIDA COMPLETA: Configurazione Variabili d'Ambiente
+# 📋 GUIDA COMPLETA: Configurazione Variabili d'Ambiente - Assistenza Anziani
 
-Questa guida ti spiega passo-passo come ottenere e configurare tutte le chiavi necessarie.
+Questa guida ti spiega passo-passo come ottenere e configurare tutte le chiavi necessarie per il portale "Assistenza Anziani".
 
 ---
 
@@ -22,7 +22,7 @@ Il file `.env.local` contiene queste variabili e viene letto automaticamente da 
 ### 1.2 Crea un nuovo progetto
 - Clicca "New Project"
 - Compila:
-  - **Name**: CareScheduler (o quello che preferisci)
+  - **Name**: Assistenza Anziani (o quello che preferisci)
   - **Database Password**: scegli una password sicura (ANNOTATELA!)
   - **Region**: West EU (Irlanda) - il più vicino all'Italia
 - Clicca "Create new project"
@@ -65,7 +65,7 @@ Una volta che il progetto è pronto:
 ### 2.2 Ottieni la API Key
 1. Dopo il login, vai su https://resend.com/api-keys
 2. Clicca "Create API Key"
-3. Dai un nome (es: "CareScheduler")
+3. Dai un nome (es: "Assistenza Anziani")
 4. Copia la chiave (inizia con `re_...`)
 
 ### 2.3 Verifica il dominio (opzionale per test)

@@ -14,7 +14,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-const FROM_EMAIL = Deno.env.get("FROM_EMAIL") || "noreply@carescheduler.com";
+const FROM_EMAIL = Deno.env.get("FROM_EMAIL") || "noreply@assistenzaanziani.com";
 
 serve(async (req) => {
   try {
@@ -44,13 +44,13 @@ serve(async (req) => {
             Authorization: `Bearer ${RESEND_API_KEY}`,
           },
           body: JSON.stringify({
-            from: `CareScheduler <${FROM_EMAIL}>`,
+            from: `Assistenza Anziani <${FROM_EMAIL}>`,
             to: [profile.email],
-            subject: "📅 Aggiornamento disponibilità - CareScheduler",
+            subject: "📅 Aggiornamento disponibilità - Assistenza Anziani",
             html: `
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                 <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 10px 10px 0 0;">
-                  <h1 style="color: white; margin: 0; font-size: 24px;">🏠 CareScheduler</h1>
+                  <h1 style="color: white; margin: 0; font-size: 24px;">🏠 Assistenza Anziani</h1>
                 </div>
                 <div style="padding: 30px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 0 0 10px 10px;">
                   <p style="font-size: 16px; color: #374151;">
@@ -64,13 +64,13 @@ serve(async (req) => {
                   <p style="font-size: 14px; color: #6b7280;">
                     Accedi al portale per vedere tutti gli aggiornamenti:
                   </p>
-                  <a href="${Deno.env.get("APP_URL") || "https://carescheduler.vercel.app"}" 
+                  <a href="${Deno.env.get("APP_URL") || "https://assistenza-anziani.vercel.app"}" 
                      style="display: inline-block; background: #667eea; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">
                     Vai al Portale
                   </a>
                   <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">
                   <p style="font-size: 12px; color: #9ca3af;">
-                    Questa è una notifica automatica da CareScheduler. 
+                    Questa è una notifica automatica dal portale Assistenza Anziani. 
                     Non rispondere a questa email.
                   </p>
                 </div>

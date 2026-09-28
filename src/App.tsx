@@ -39,7 +39,7 @@ function AppContent() {
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="text-2xl">🏠</span>
-            <h1 className="text-xl font-bold text-gray-800 hidden sm:block">CareScheduler</h1>
+            <h1 className="text-xl font-bold text-gray-800 hidden sm:block">Assistenza Anziani</h1>
           </div>
 
           {/* Navigation */}
@@ -130,7 +130,7 @@ function AppContent() {
       {/* Footer */}
       <footer className="bg-white border-t mt-8 py-4">
         <div className="max-w-7xl mx-auto px-4 text-center text-sm text-gray-500">
-          <p>CareScheduler - Gestione disponibilità assistenza anziani</p>
+          <p>Assistenza Anziani - Gestione disponibilità</p>
           <p className="mt-1">Ogni modifica viene notificata via email a tutti gli utenti</p>
         </div>
       </footer>
