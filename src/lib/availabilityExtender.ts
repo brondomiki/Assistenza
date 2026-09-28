@@ -7,6 +7,8 @@ import { startOfMonth, endOfMonth, eachDayOfInterval, format, isSunday, addMonth
  * 
  * Questa funzione viene chiamata quando si naviga nel calendario per garantire
  * che ci siano sempre disponibilità per i mesi futuri.
+ * 
+ * Orario: 00:00-23:59 (24 ore complete) dal lunedì al sabato
  */
 export async function extendCaregiverAvailability(userId: string, targetMonth: Date) {
   try {
@@ -45,8 +47,8 @@ export async function extendCaregiverAvailability(userId: string, targetMonth: D
           user_id: userId,
           date: format(day, 'yyyy-MM-dd'),
           status: 'disponibile' as const,
-          start_time: '08:00',
-          end_time: '12:00',
+          start_time: '00:00',
+          end_time: '23:59',
         }));
 
       if (availabilities.length > 0) {

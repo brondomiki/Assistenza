@@ -65,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function createDefaultCaregiverAvailability(userId: string) {
     // Crea disponibilità di default per i prossimi 12 mesi
-    // Lunedì-Sabato: 08:00-12:00
+    // Lunedì-Sabato: 00:00-23:59 (24 ore)
     const today = new Date();
     const startDate = startOfMonth(today);
     const endDate = addMonths(startDate, 12);
@@ -78,8 +78,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user_id: userId,
         date: format(day, 'yyyy-MM-dd'),
         status: 'disponibile' as const,
-        start_time: '08:00',
-        end_time: '12:00',
+        start_time: '00:00',
+        end_time: '23:59',
       }));
 
     if (availabilities.length > 0) {
@@ -119,7 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await supabase.from('profiles').update(updates).eq('id', data.user.id);
       }
 
-      // Se è una badante, crea disponibilità di default (lun-sab 08:00-12:00)
+      // Se è una badante, crea disponibilità di default (lun-sab 00:00-23:59, 24h)
       if (role === 'badante') {
         try {
           await createDefaultCaregiverAvailability(data.user.id);
