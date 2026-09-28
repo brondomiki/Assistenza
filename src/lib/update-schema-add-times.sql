@@ -1,9 +1,9 @@
 -- ============================================
--- UPDATE SCHEMA: Aggiunge i campi orario
+-- UPDATE SCHEMA: Aggiunge i campi orario, avatar
 -- e rafforza la sicurezza degli inserimenti
 -- ============================================
 -- Esegui questo script se hai già creato il database
--- per aggiungere i campi start_time ed end_time
+-- per aggiungere i campi start_time, end_time e avatar
 -- e per impedire la modifica degli inserimenti altrui
 -- ============================================
 
@@ -14,6 +14,9 @@ ALTER TABLE caregiver_availability ADD COLUMN IF NOT EXISTS end_time TIME;
 -- Aggiunge i campi alla tabella familiari
 ALTER TABLE family_availability ADD COLUMN IF NOT EXISTS start_time TIME;
 ALTER TABLE family_availability ADD COLUMN IF NOT EXISTS end_time TIME;
+
+-- Aggiunge il campo avatar alla tabella profili
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS avatar TEXT;
 
 -- ============================================
 -- SICUREZZA: Impedisce a un membro di modificare

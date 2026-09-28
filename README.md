@@ -7,9 +7,11 @@ Un portale web per la gestione della disponibilità di badanti e familiari per l
 - **Calendario Badanti**: Le badanti possono segnare i giorni di disponibilità/non disponibilità
 - **Calendario Familiari**: I familiari gestiscono la disponibilità nei weekend e giorni festivi
 - **Notifiche Email**: Ogni modifica viene notificata via email a tutti gli utenti
-- **Registrazione Utenti**: Pagina dedicata per la registrazione con scelta del ruolo
+- **Registrazione Utenti**: Pagina dedicata per la registrazione con scelta del ruolo e avatar
+- **Profilo Utente**: Ogni utente può modificare i propri dati (nome, telefono, avatar) cliccando sulla propria immagine
 - **Pannello Admin**: Il superuser può gestire tutti gli utenti e i ruoli
-- **Dashboard**: Panoramica della situazione attuale
+- **Dashboard**: Panoramica della situazione attuale con calendario completo
+- **Tema Scuro**: Interfaccia moderna con sfondo nero e riempimento visivo delle caselle in base alle ore
 
 ## 🛠️ Tecnologie
 
