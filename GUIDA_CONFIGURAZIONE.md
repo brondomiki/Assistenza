@@ -28,7 +28,19 @@ Il file `.env.local` contiene queste variabili e viene letto automaticamente da 
 - Clicca "Create new project"
 - Attendi 1-2 minuti che il progetto sia pronto
 
-### 1.3 Trova le chiavi API
+### 1.3 Disabilita la conferma email
+
+**IMPORTANTE**: Per permettere la registrazione senza conferma email:
+
+1. Nel menu a sinistra, clicca su **Authentication** (icona lucchetto 🔒)
+2. Clicca su **Providers** nel sottomenu
+3. Clicca su **Email**
+4. Trova l'opzione **"Confirm email"** e **DISABILITALA** (toggle su OFF)
+5. Clicca **Save**
+
+In questo modo, quando un utente si registra, verrà automaticamente loggato senza dover confermare l'email.
+
+### 1.4 Trova le chiavi API
 Una volta che il progetto è pronto:
 
 1. Nel menu a sinistra, clicca su **"Settings"** (l'ingranaggio ⚙️)

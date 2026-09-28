@@ -71,6 +71,19 @@ export default function SetupGuide() {
                     </li>
                   </ol>
                 </div>
+
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <p className="text-red-800 font-medium mb-2">🔒 IMPORTANTE: Disabilita la conferma email</p>
+                  <p className="text-red-700 text-sm mb-2">
+                    Per permettere la registrazione senza conferma email:
+                  </p>
+                  <ol className="text-red-700 text-sm space-y-1 list-decimal list-inside">
+                    <li>Vai su <strong>Authentication</strong> (🔒 nel menu a sinistra)</li>
+                    <li>Clicca su <strong>Providers</strong> &gt; <strong>Email</strong></li>
+                    <li><strong>DISABILITA</strong> "Confirm email" (toggle OFF)</li>
+                    <li>Clicca <strong>Save</strong></li>
+                  </ol>
+                </div>
               </div>
             </div>
           )}
@@ -286,16 +299,11 @@ APP_URL=http://localhost:5173`}</pre>
                       <span className="w-6 h-6 bg-indigo-500 text-white rounded-full flex items-center justify-center text-sm font-bold shrink-0">1</span>
                       <div>
                         <p className="text-gray-700">Nell{"'"}app, clicca <strong>"Registrati"</strong> e crea il tuo account</p>
+                        <p className="text-sm text-gray-500 mt-1">Verrai automaticamente loggato dopo la registrazione</p>
                       </div>
                     </li>
                     <li className="flex gap-3">
                       <span className="w-6 h-6 bg-indigo-500 text-white rounded-full flex items-center justify-center text-sm font-bold shrink-0">2</span>
-                      <div>
-                        <p className="text-gray-700">Conferma l'email (clicca il link che ti arriva)</p>
-                      </div>
-                    </li>
-                    <li className="flex gap-3">
-                      <span className="w-6 h-6 bg-indigo-500 text-white rounded-full flex items-center justify-center text-sm font-bold shrink-0">3</span>
                       <div>
                         <p className="text-gray-700">Vai su Supabase &gt; SQL Editor ed esegui:</p>
                         <div className="mt-2 bg-gray-900 rounded-lg p-3 font-mono text-xs">
@@ -306,7 +314,7 @@ WHERE email = 'tua-email@esempio.it';`}</pre>
                       </div>
                     </li>
                     <li className="flex gap-3">
-                      <span className="w-6 h-6 bg-indigo-500 text-white rounded-full flex items-center justify-center text-sm font-bold shrink-0">4</span>
+                      <span className="w-6 h-6 bg-indigo-500 text-white rounded-full flex items-center justify-center text-sm font-bold shrink-0">3</span>
                       <div>
                         <p className="text-gray-700">Ricarica l'app → ora vedrai il pulsante <strong>⚙️ Admin</strong></p>
                       </div>

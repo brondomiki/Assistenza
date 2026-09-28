@@ -7,7 +7,7 @@ interface AuthContextType {
   profile: Profile | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, fullName: string, role: UserRole, phone?: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, fullName: string, role: UserRole, phone?: string) => Promise<{ error: any; requiresEmailConfirmation: boolean }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
 }
@@ -59,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signUp(email: string, password: string, fullName: string, role: UserRole, phone?: string) {
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -70,17 +70,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    if (!error) {
-      // Update profile with phone if provided
-      if (phone) {
-        const { data: { user: newUser } } = await supabase.auth.getUser();
-        if (newUser) {
-          await supabase.from('profiles').update({ phone }).eq('id', newUser.id);
-        }
-      }
+    if (error) {
+      return { error, requiresEmailConfirmation: false };
     }
 
-    return { error };
+    // Aggiorna il profilo con il telefono se fornito
+    if (!error && data.user && phone) {
+      await supabase.from('profiles').update({ phone }).eq('id', data.user.id);
+    }
+
+    // Controlla se l'utente è già autenticato (conferma email disabilitata)
+    // o se deve confermare l'email
+    const requiresEmailConfirmation = !data.session;
+
+    return { error: null, requiresEmailConfirmation };
   }
 
   async function signIn(email: string, password: string) {
