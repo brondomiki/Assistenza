@@ -116,6 +116,28 @@ export default function CaregiverCalendar() {
     }
   }
 
+  async function removeAvailability() {
+    if (!selectedDate || !user) return;
+    if (!confirm(`Sei sicuro di voler rimuovere la disponibilità per il ${format(selectedDate, 'dd/MM/yyyy')}?`)) return;
+
+    const dateStr = format(selectedDate, 'yyyy-MM-dd');
+
+    const { error } = await supabase
+      .from('caregiver_availability')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('date', dateStr);
+
+    if (!error) {
+      await sendNotification(
+        `${profile?.full_name} ha RIMOSSO la propria disponibilità per il ${format(selectedDate, 'dd/MM/yyyy')}`
+      );
+      setShowModal(false);
+      fetchMyAvailability();
+      fetchAllAvailability();
+    }
+  }
+
   async function sendNotification(message: string) {
     const { data: profiles } = await supabase.from('profiles').select('id');
     if (profiles) {
@@ -269,9 +291,22 @@ export default function CaregiverCalendar() {
       {showModal && selectedDate && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">
+            <h3 className="text-lg font-bold text-gray-800 mb-2">
               {format(selectedDate, 'EEEE dd MMMM yyyy', { locale: it })}
             </h3>
+
+            {/* Banner: disponibilità esistente */}
+            {selectedDate && availability[format(selectedDate, 'yyyy-MM-dd')] && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4 flex items-start gap-2">
+                <span className="text-lg">ℹ️</span>
+                <div className="text-sm text-amber-800">
+                  <p className="font-medium">Hai già inserito una disponibilità per questo giorno</p>
+                  <p className="text-amber-700 mt-0.5">
+                    Puoi modificarla qui sotto oppure rimuoverla completamente con il pulsante in fondo.
+                  </p>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-4">
               <div>
@@ -368,19 +403,32 @@ export default function CaregiverCalendar() {
                 />
               </div>
 
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="flex-1 py-3 border border-gray-300 rounded-lg font-medium text-gray-600 hover:bg-gray-50 transition"
-                >
-                  Annulla
-                </button>
-                <button
-                  onClick={saveAvailability}
-                  className="flex-1 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition"
-                >
-                  Salva
-                </button>
+              <div className="space-y-3">
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowModal(false)}
+                    className="flex-1 py-3 border border-gray-300 rounded-lg font-medium text-gray-600 hover:bg-gray-50 transition"
+                  >
+                    Annulla
+                  </button>
+                  <button
+                    onClick={saveAvailability}
+                    className="flex-1 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition"
+                  >
+                    💾 Salva
+                  </button>
+                </div>
+                
+                {/* Pulsante Rimuovi - visibile solo se c'è già una disponibilità */}
+                {selectedDate && availability[format(selectedDate, 'yyyy-MM-dd')] && (
+                  <button
+                    onClick={removeAvailability}
+                    className="w-full py-3 bg-red-50 border-2 border-red-300 text-red-700 rounded-lg font-medium hover:bg-red-100 transition flex items-center justify-center gap-2"
+                  >
+                    <span>🗑️</span>
+                    <span>Rimuovi questa disponibilità</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
