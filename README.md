@@ -112,10 +112,14 @@ Ogni modifica alla disponibilità genera:
 ### Calendario Badanti
 - Tutti i giorni della settimana
 - Status: Disponibile / Non disponibile
+- **Orario inizio e fine disponibilità** (se disponibile)
+- Preset orari rapidi (Mattina, Pomeriggio, Giornata, ecc.)
 - Note opzionali per ogni giorno
 
 ### Calendario Familiari
 - Solo weekend (sabato/domenica) e giorni festivi italiani
 - Status: Disponibile / Non disponibile
+- **Orario inizio e fine disponibilità** (se disponibile)
+- Preset orari rapidi per il weekend
 - Note opzionali per ogni giorno
 - Festivi italiani pre-configurati

@@ -22,6 +22,8 @@ export interface Availability {
   user_id: string;
   date: string;
   status: 'disponibile' | 'non_disponibile';
+  start_time?: string; // formato HH:MM
+  end_time?: string;   // formato HH:MM
   notes?: string;
   created_at: string;
   updated_at: string;

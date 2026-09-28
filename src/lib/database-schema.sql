@@ -19,6 +19,8 @@ CREATE TABLE caregiver_availability (
   user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
   date DATE NOT NULL,
   status TEXT NOT NULL CHECK (status IN ('disponibile', 'non_disponibile')),
+  start_time TIME,
+  end_time TIME,
   notes TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
@@ -31,6 +33,8 @@ CREATE TABLE family_availability (
   user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
   date DATE NOT NULL,
   status TEXT NOT NULL CHECK (status IN ('disponibile', 'non_disponibile')),
+  start_time TIME,
+  end_time TIME,
   notes TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
@@ -130,3 +134,12 @@ CREATE TRIGGER set_caregiver_updated_at
 CREATE TRIGGER set_family_updated_at
   BEFORE UPDATE ON family_availability
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- ============================================
+-- SE HAI GIÀ IL DATABASE CREATO, esegui solo
+-- queste query per aggiungere i campi orario:
+-- ============================================
+-- ALTER TABLE caregiver_availability ADD COLUMN IF NOT EXISTS start_time TIME;
+-- ALTER TABLE caregiver_availability ADD COLUMN IF NOT EXISTS end_time TIME;
+-- ALTER TABLE family_availability ADD COLUMN IF NOT EXISTS start_time TIME;
+-- ALTER TABLE family_availability ADD COLUMN IF NOT EXISTS end_time TIME;
