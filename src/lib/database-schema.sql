@@ -77,15 +77,27 @@ CREATE POLICY "Gli utenti possono inserire il proprio profilo" ON profiles
 CREATE POLICY "Chiunque può vedere la disponibilità badanti" ON caregiver_availability
   FOR SELECT USING (true);
 
-CREATE POLICY "Le badanti possono gestire la propria disponibilità" ON caregiver_availability
-  FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Le badanti possono inserire la propria disponibilità" ON caregiver_availability
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Le badanti possono modificare la propria disponibilità" ON caregiver_availability
+  FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Le badanti possono eliminare la propria disponibilità" ON caregiver_availability
+  FOR DELETE USING (auth.uid() = user_id);
 
 -- Policy per family_availability
 CREATE POLICY "Chiunque può vedere la disponibilità familiari" ON family_availability
   FOR SELECT USING (true);
 
-CREATE POLICY "I familiari possono gestire la propria disponibilità" ON family_availability
-  FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "I familiari possono inserire la propria disponibilità" ON family_availability
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "I familiari possono modificare la propria disponibilità" ON family_availability
+  FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "I familiari possono eliminare la propria disponibilità" ON family_availability
+  FOR DELETE USING (auth.uid() = user_id);
 
 -- Policy per notifications
 CREATE POLICY "Gli utenti possono vedere le proprie notifiche" ON notifications
@@ -137,9 +149,28 @@ CREATE TRIGGER set_family_updated_at
 
 -- ============================================
 -- SE HAI GIÀ IL DATABASE CREATO, esegui solo
--- queste query per aggiungere i campi orario:
+-- queste query per aggiungere i campi orario
+-- e aggiornare le policies di sicurezza:
 -- ============================================
 -- ALTER TABLE caregiver_availability ADD COLUMN IF NOT EXISTS start_time TIME;
 -- ALTER TABLE caregiver_availability ADD COLUMN IF NOT EXISTS end_time TIME;
 -- ALTER TABLE family_availability ADD COLUMN IF NOT EXISTS start_time TIME;
 -- ALTER TABLE family_availability ADD COLUMN IF NOT EXISTS end_time TIME;
+--
+-- Aggiorna le policies di sicurezza (previeni modifica inserimenti altrui):
+-- DROP POLICY IF EXISTS "Le badanti possono gestire la propria disponibilità" ON caregiver_availability;
+-- DROP POLICY IF EXISTS "I familiari possono gestire la propria disponibilità" ON family_availability;
+--
+-- CREATE POLICY "Le badanti possono inserire la propria disponibilità" ON caregiver_availability
+--   FOR INSERT WITH CHECK (auth.uid() = user_id);
+-- CREATE POLICY "Le badanti possono modificare la propria disponibilità" ON caregiver_availability
+--   FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+-- CREATE POLICY "Le badanti possono eliminare la propria disponibilità" ON caregiver_availability
+--   FOR DELETE USING (auth.uid() = user_id);
+--
+-- CREATE POLICY "I familiari possono inserire la propria disponibilità" ON family_availability
+--   FOR INSERT WITH CHECK (auth.uid() = user_id);
+-- CREATE POLICY "I familiari possono modificare la propria disponibilità" ON family_availability
+--   FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+-- CREATE POLICY "I familiari possono eliminare la propria disponibilità" ON family_availability
+--   FOR DELETE USING (auth.uid() = user_id);

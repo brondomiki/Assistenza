@@ -93,16 +93,14 @@ export default function CaregiverCalendar() {
     if (!selectedDate || !user) return;
     const dateStr = format(selectedDate, 'yyyy-MM-dd');
 
-    const timeInfo = modalStatus === 'disponibile' 
-      ? `dalle ${modalStartTime} alle ${modalEndTime}` 
-      : '';
+    const timeInfo = `dalle ${modalStartTime} alle ${modalEndTime}`;
 
     const { error } = await supabase.from('caregiver_availability').upsert({
       user_id: user.id,
       date: dateStr,
       status: modalStatus,
-      start_time: modalStatus === 'disponibile' ? modalStartTime : null,
-      end_time: modalStatus === 'disponibile' ? modalEndTime : null,
+      start_time: modalStartTime,
+      end_time: modalEndTime,
       notes: modalNotes || null,
     });
 
@@ -335,62 +333,64 @@ export default function CaregiverCalendar() {
                 </div>
               </div>
 
-              {/* Orari - visibili solo se disponibile */}
-              {modalStatus === 'disponibile' && (
-                <>
-                  {/* Preset orari rapidi */}
+              {/* Orari - sempre visibili */}
+              <>
+                {/* Preset orari rapidi */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Orari rapidi</label>
+                  <div className="flex flex-wrap gap-2">
+                    {timePresets.map((preset) => (
+                      <button
+                        key={preset.label}
+                        onClick={() => {
+                          setModalStartTime(preset.start);
+                          setModalEndTime(preset.end);
+                        }}
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition border ${
+                          modalStartTime === preset.start && modalEndTime === preset.end
+                            ? 'bg-indigo-500 text-white border-indigo-500'
+                            : 'bg-white text-gray-600 border-gray-300 hover:border-indigo-300 hover:bg-indigo-50'
+                        }`}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Orari rapidi</label>
-                    <div className="flex flex-wrap gap-2">
-                      {timePresets.map((preset) => (
-                        <button
-                          key={preset.label}
-                          onClick={() => {
-                            setModalStartTime(preset.start);
-                            setModalEndTime(preset.end);
-                          }}
-                          className={`px-3 py-1.5 rounded-full text-xs font-medium transition border ${
-                            modalStartTime === preset.start && modalEndTime === preset.end
-                              ? 'bg-indigo-500 text-white border-indigo-500'
-                              : 'bg-white text-gray-600 border-gray-300 hover:border-indigo-300 hover:bg-indigo-50'
-                          }`}
-                        >
-                          {preset.label}
-                        </button>
-                      ))}
-                    </div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      🕐 Inizio
+                    </label>
+                    <input
+                      type="time"
+                      value={modalStartTime}
+                      onChange={(e) => setModalStartTime(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-lg"
+                    />
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      🕐 Fine
+                    </label>
+                    <input
+                      type="time"
+                      value={modalEndTime}
+                      onChange={(e) => setModalEndTime(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-lg"
+                    />
+                  </div>
+                </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        🕐 Inizio disponibilità
-                      </label>
-                      <input
-                        type="time"
-                        value={modalStartTime}
-                        onChange={(e) => setModalStartTime(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-lg"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        🕐 Fine disponibilità
-                      </label>
-                      <input
-                        type="time"
-                        value={modalEndTime}
-                        onChange={(e) => setModalEndTime(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-lg"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-800">
-                    📅 Sarai disponibile dalle <strong>{modalStartTime}</strong> alle <strong>{modalEndTime}</strong>
-                  </div>
-                </>
-              )}
+                <div className={`border rounded-lg p-3 text-sm ${
+                  modalStatus === 'disponibile' 
+                    ? 'bg-green-50 border-green-200 text-green-800'
+                    : 'bg-red-50 border-red-200 text-red-800'
+                }`}>
+                  📅 {modalStatus === 'disponibile' ? 'Sarai disponibile' : 'Non sarai disponibile'} dalle <strong>{modalStartTime}</strong> alle <strong>{modalEndTime}</strong>
+                </div>
+              </>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Note (opzionale)</label>

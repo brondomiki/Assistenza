@@ -343,6 +343,7 @@ export default function Dashboard() {
                 </span>
                 {entries.length > 0 && (
                   <div className="mt-1 space-y-0.5">
+                    {/* Icone membri */}
                     <div className="flex items-center gap-1 flex-wrap">
                       {entries.filter(e => e.status === 'disponibile').slice(0, 3).map((e, i) => (
                         <span
@@ -360,11 +361,21 @@ export default function Dashboard() {
                         </span>
                       )}
                     </div>
-                    {entries.length > 0 && (
-                      <div className="text-[10px] text-gray-600 font-medium">
-                        {entries.length} {entries.length === 1 ? 'inserimento' : 'inserimenti'}
-                      </div>
-                    )}
+                    {/* Orari */}
+                    <div className="space-y-0.5">
+                      {entries.slice(0, 2).map((e, i) => (
+                        <div key={i} className="text-[9px] text-gray-700 font-medium leading-tight truncate">
+                          {e.start_time && e.end_time && (
+                            <span className={`${e.status === 'disponibile' ? 'text-green-700' : 'text-red-700'}`}>
+                              {e.type === 'badante' ? '👩' : '👨'} {e.start_time}-{e.end_time}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                      {entries.length > 2 && (
+                        <div className="text-[9px] text-gray-500">+{entries.length - 2} altri</div>
+                      )}
+                    </div>
                   </div>
                 )}
               </button>
