@@ -13,8 +13,31 @@ import {
   endOfWeek,
   isToday,
   isWeekend,
+  parseISO,
 } from 'date-fns';
 import { it } from 'date-fns/locale';
+
+// Funzione helper per determinare se una disponibilità è precompilata
+function isPrecompiledAvailability(date: Date, startTime?: string, endTime?: string): boolean {
+  if (!startTime || !endTime) return false;
+  
+  const dayOfWeek = date.getDay(); // 0=Dom, 1=Lun, ..., 5=Ven, 6=Sab
+  
+  // Domenica: nessuna disponibilità precompilata
+  if (dayOfWeek === 0) return false;
+  
+  // Lunedì-Venerdì: 00:00-23:59
+  if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+    return startTime === '00:00' && endTime === '23:59';
+  }
+  
+  // Sabato: 00:00-12:00
+  if (dayOfWeek === 6) {
+    return startTime === '00:00' && endTime === '12:00';
+  }
+  
+  return false;
+}
 import { extendCaregiverAvailability } from '../lib/availabilityExtender';
 
 export default function CaregiverCalendar() {
@@ -86,15 +109,16 @@ export default function CaregiverCalendar() {
     const dateStr = format(date, 'yyyy-MM-dd');
     const existing = availability[dateStr];
     
-    // Controlla se è una disponibilità precompilata (00:00-12:00)
-    const isPrecompiled = existing?.start_time === '00:00' && existing?.end_time === '12:00';
+    // Controlla se è una disponibilità precompilata
+    // Lun-Ven: 00:00-23:59, Sab: 00:00-12:00
+    const isPrecompiled = isPrecompiledAvailability(date, existing?.start_time, existing?.end_time);
     
-    if (isPrecompiled) {
-      // Se è precompilata, permetti solo di inserire "non disponibilità"
+    if (isPrecompiled && existing?.status === 'disponibile') {
+      // Se è precompilata e disponibile, permetti solo di inserire "non disponibilità"
       setModalStatus('non_disponibile');
       setModalNotes('');
-      setModalStartTime('00:00');
-      setModalEndTime('12:00');
+      setModalStartTime(existing.start_time || '00:00');
+      setModalEndTime(existing.end_time || '23:59');
     } else {
       // Altrimenti, comportamento normale
       setModalStatus(existing?.status === 'non_disponibile' ? 'non_disponibile' : 'disponibile');
@@ -112,7 +136,7 @@ export default function CaregiverCalendar() {
     
     // Controlla se è una disponibilità precompilata
     const existing = availability[dateStr];
-    const isPrecompiled = existing?.start_time === '00:00' && existing?.end_time === '12:00';
+    const isPrecompiled = isPrecompiledAvailability(selectedDate, existing?.start_time, existing?.end_time);
 
     // Se è precompilata e la badante vuole inserire "non disponibilità"
     if (isPrecompiled && modalStatus === 'non_disponibile') {
@@ -120,8 +144,8 @@ export default function CaregiverCalendar() {
         user_id: user.id,
         date: dateStr,
         status: 'non_disponibile',
-        start_time: '00:00',
-        end_time: '12:00',
+        start_time: existing?.start_time || '00:00',
+        end_time: existing?.end_time || '23:59',
         notes: modalNotes || null,
       });
 
@@ -163,18 +187,23 @@ export default function CaregiverCalendar() {
     
     const dateStr = format(selectedDate, 'yyyy-MM-dd');
     const existing = availability[dateStr];
-    const isPrecompiled = existing?.start_time === '00:00' && existing?.end_time === '12:00';
+    const isPrecompiled = isPrecompiledAvailability(selectedDate, existing?.start_time, existing?.end_time);
     
     // Se è una "non disponibilità" su un giorno precompilato, ripristina la disponibilità automatica
     if (existing?.status === 'non_disponibile' && isPrecompiled) {
       if (!confirm('Ripristinare la disponibilità automatica per questo giorno?')) return;
+      
+      // Determina gli orari corretti in base al giorno della settimana
+      const dayOfWeek = selectedDate.getDay();
+      const isSaturday = dayOfWeek === 6;
+      const endTime = isSaturday ? '12:00' : '23:59';
       
       const { error } = await supabase.from('caregiver_availability').upsert({
         user_id: user.id,
         date: dateStr,
         status: 'disponibile',
         start_time: '00:00',
-        end_time: '12:00',
+        end_time: endTime,
         notes: null,
       });
       
@@ -418,14 +447,20 @@ export default function CaregiverCalendar() {
             {/* Banner: disponibilità esistente */}
             {selectedDate && availability[format(selectedDate, 'yyyy-MM-dd')] && (() => {
               const existing = availability[format(selectedDate, 'yyyy-MM-dd')];
-              const isPrecompiled = existing?.start_time === '00:00' && existing?.end_time === '12:00';
+              const isPrecompiled = isPrecompiledAvailability(selectedDate, existing?.start_time, existing?.end_time);
               
               if (isPrecompiled && existing?.status === 'disponibile') {
+                // Determina il messaggio in base al giorno della settimana
+                const dayOfWeek = selectedDate.getDay();
+                const isSaturday = dayOfWeek === 6;
+                const timeRange = isSaturday ? '00:00-12:00' : '00:00-24:00';
+                const dayType = isSaturday ? 'Sabato' : 'Lun-Ven';
+                
                 return (
                   <div className="bg-blue-900/30 border border-blue-700 rounded-lg p-3 mb-4 flex items-start gap-2">
                     <span className="text-lg">🔒</span>
                     <div className="text-sm text-blue-300">
-                      <p className="font-medium">Disponibilità automatica (Lun-Sab 00:00-12:00)</p>
+                      <p className="font-medium">Disponibilità automatica ({dayType} {timeRange})</p>
                       <p className="text-blue-400 mt-0.5">
                         Puoi solo inserire una "non disponibilità" per questo giorno.
                       </p>
@@ -453,7 +488,7 @@ export default function CaregiverCalendar() {
                 <div className="flex gap-3">
                   {(() => {
                     const existing = selectedDate ? availability[format(selectedDate, 'yyyy-MM-dd')] : null;
-                    const isPrecompiled = existing?.start_time === '00:00' && existing?.end_time === '12:00';
+                    const isPrecompiled = selectedDate ? isPrecompiledAvailability(selectedDate, existing?.start_time, existing?.end_time) : false;
                     
                     return (
                       <>
@@ -487,7 +522,7 @@ export default function CaregiverCalendar() {
               {/* Orari - visibili solo se non è una disponibilità precompilata */}
               {(() => {
                 const existing = selectedDate ? availability[format(selectedDate, 'yyyy-MM-dd')] : null;
-                const isPrecompiled = existing?.start_time === '00:00' && existing?.end_time === '12:00';
+                const isPrecompiled = selectedDate ? isPrecompiledAvailability(selectedDate, existing?.start_time, existing?.end_time) : false;
                 
                 if (isPrecompiled) {
                   return null; // Non mostrare la sezione orari
@@ -584,7 +619,7 @@ export default function CaregiverCalendar() {
                 {/* Pulsante Rimuovi/Ripristina - visibile solo se c'è già una disponibilità */}
                 {selectedDate && availability[format(selectedDate, 'yyyy-MM-dd')] && (() => {
                   const existing = availability[format(selectedDate, 'yyyy-MM-dd')];
-                  const isPrecompiled = existing?.start_time === '00:00' && existing?.end_time === '12:00';
+                  const isPrecompiled = isPrecompiledAvailability(selectedDate, existing?.start_time, existing?.end_time);
                   const isNonAvailable = existing?.status === 'non_disponibile';
                   
                   // Se è una "non disponibilità" su un giorno precompilato, mostra "Ripristina"

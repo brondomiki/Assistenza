@@ -42,14 +42,19 @@ export async function extendCaregiverAvailability(userId: string, targetMonth: D
       const allDays = eachDayOfInterval({ start: startDate, end: endDate });
 
       const availabilities = allDays
-        .filter(day => !isSunday(day)) // Escludi domenica
-        .map(day => ({
-          user_id: userId,
-          date: format(day, 'yyyy-MM-dd'),
-          status: 'disponibile' as const,
-          start_time: '00:00',
-          end_time: '12:00',
-        }));
+        .filter(day => day.getDay() !== 0) // Escludi domenica (0 = domenica)
+        .map(day => {
+          const dayOfWeek = day.getDay(); // 1=Lun, 2=Mar, ..., 5=Ven, 6=Sab
+          const isSaturday = dayOfWeek === 6;
+          
+          return {
+            user_id: userId,
+            date: format(day, 'yyyy-MM-dd'),
+            status: 'disponibile' as const,
+            start_time: '00:00',
+            end_time: isSaturday ? '12:00' : '23:59',
+          };
+        });
 
       if (availabilities.length > 0) {
         // Inserisci in batch
