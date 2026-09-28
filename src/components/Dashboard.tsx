@@ -154,6 +154,11 @@ export default function Dashboard() {
                     {item.status === 'disponibile' ? '✓ Disponibile' : '✗ Non disponibile'}
                   </span>
                 </div>
+                {item.status === 'disponibile' && item.start_time && item.end_time && (
+                  <p className="text-sm text-gray-700 mt-1 font-medium">
+                    🕐 {item.start_time} - {item.end_time}
+                  </p>
+                )}
                 {item.notes && (
                   <p className="text-sm text-gray-500 mt-2 italic">"{item.notes}"</p>
                 )}

@@ -7,7 +7,6 @@ import {
   eachDayOfInterval,
   format,
   isSameMonth,
-  isSameDay,
   addMonths,
   subMonths,
   startOfWeek,
@@ -20,10 +19,12 @@ import { it } from 'date-fns/locale';
 export default function CaregiverCalendar() {
   const { user, profile } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [availability, setAvailability] = useState<Record<string, { status: string; notes?: string }>>({});
+  const [availability, setAvailability] = useState<Record<string, { status: string; notes?: string; start_time?: string; end_time?: string }>>({});
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [modalStatus, setModalStatus] = useState<'disponibile' | 'non_disponibile'>('disponibile');
   const [modalNotes, setModalNotes] = useState('');
+  const [modalStartTime, setModalStartTime] = useState('08:00');
+  const [modalEndTime, setModalEndTime] = useState('17:00');
   const [showModal, setShowModal] = useState(false);
   const [allCaregiverAvailability, setAllCaregiverAvailability] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,9 +48,14 @@ export default function CaregiverCalendar() {
       .lte('date', monthEnd);
 
     if (data) {
-      const map: Record<string, { status: string; notes?: string }> = {};
+      const map: Record<string, { status: string; notes?: string; start_time?: string; end_time?: string }> = {};
       data.forEach((item) => {
-        map[item.date] = { status: item.status, notes: item.notes };
+        map[item.date] = { 
+          status: item.status, 
+          notes: item.notes,
+          start_time: item.start_time,
+          end_time: item.end_time,
+        };
       });
       setAvailability(map);
     }
@@ -78,6 +84,8 @@ export default function CaregiverCalendar() {
     const existing = availability[dateStr];
     setModalStatus(existing?.status === 'non_disponibile' ? 'non_disponibile' : 'disponibile');
     setModalNotes(existing?.notes || '');
+    setModalStartTime(existing?.start_time || '08:00');
+    setModalEndTime(existing?.end_time || '17:00');
     setShowModal(true);
   }
 
@@ -85,17 +93,22 @@ export default function CaregiverCalendar() {
     if (!selectedDate || !user) return;
     const dateStr = format(selectedDate, 'yyyy-MM-dd');
 
+    const timeInfo = modalStatus === 'disponibile' 
+      ? `dalle ${modalStartTime} alle ${modalEndTime}` 
+      : '';
+
     const { error } = await supabase.from('caregiver_availability').upsert({
       user_id: user.id,
       date: dateStr,
       status: modalStatus,
+      start_time: modalStatus === 'disponibile' ? modalStartTime : null,
+      end_time: modalStatus === 'disponibile' ? modalEndTime : null,
       notes: modalNotes || null,
     });
 
     if (!error) {
-      // Send notification to all users
       await sendNotification(
-        `${profile?.full_name} ha aggiornato la propria disponibilità per il ${format(selectedDate, 'dd/MM/yyyy')}: ${modalStatus === 'disponibile' ? 'Disponibile' : 'Non disponibile'}`
+        `${profile?.full_name} ha aggiornato la propria disponibilità per il ${format(selectedDate, 'dd/MM/yyyy')}: ${modalStatus === 'disponibile' ? `Disponibile ${timeInfo}` : 'Non disponibile'}`
       );
       setShowModal(false);
       fetchMyAvailability();
@@ -104,7 +117,6 @@ export default function CaregiverCalendar() {
   }
 
   async function sendNotification(message: string) {
-    // Get all users
     const { data: profiles } = await supabase.from('profiles').select('id');
     if (profiles) {
       const notifications = profiles
@@ -128,6 +140,15 @@ export default function CaregiverCalendar() {
   const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
   const weekDays = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
+
+  // Preset orari rapidi
+  const timePresets = [
+    { label: 'Mattina (8-13)', start: '08:00', end: '13:00' },
+    { label: 'Pomeriggio (13-18)', start: '13:00', end: '18:00' },
+    { label: 'Giornata (8-17)', start: '08:00', end: '17:00' },
+    { label: 'Intera giornata (8-20)', start: '08:00', end: '20:00' },
+    { label: 'Notte (20-8)', start: '20:00', end: '08:00' },
+  ];
 
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6">
@@ -177,7 +198,7 @@ export default function CaregiverCalendar() {
               onClick={() => handleDayClick(day)}
               disabled={!isCurrentMonth}
               className={`
-                relative p-2 min-h-[60px] rounded-lg text-sm transition border
+                relative p-2 min-h-[75px] rounded-lg text-sm transition border
                 ${!isCurrentMonth ? 'opacity-30 cursor-default' : 'hover:border-indigo-300 cursor-pointer'}
                 ${dayIsToday ? 'border-indigo-500 border-2' : 'border-gray-100'}
                 ${dayIsWeekend && isCurrentMonth ? 'bg-orange-50' : ''}
@@ -189,7 +210,7 @@ export default function CaregiverCalendar() {
                 {format(day, 'd')}
               </span>
               {myAvail && (
-                <div className="mt-1">
+                <div className="mt-1 space-y-0.5">
                   <span className={`text-xs px-1.5 py-0.5 rounded-full ${
                     myAvail.status === 'disponibile' 
                       ? 'bg-green-500 text-white' 
@@ -197,6 +218,11 @@ export default function CaregiverCalendar() {
                   }`}>
                     {myAvail.status === 'disponibile' ? '✓' : '✗'}
                   </span>
+                  {myAvail.status === 'disponibile' && myAvail.start_time && myAvail.end_time && (
+                    <div className="text-[10px] text-green-800 font-medium leading-tight">
+                      {myAvail.start_time}-{myAvail.end_time}
+                    </div>
+                  )}
                 </div>
               )}
             </button>
@@ -226,12 +252,12 @@ export default function CaregiverCalendar() {
           <h3 className="font-semibold text-gray-700 mb-2">Riepilogo disponibilità badanti</h3>
           <div className="space-y-1 max-h-40 overflow-y-auto">
             {allCaregiverAvailability.slice(0, 10).map((item, idx) => (
-              <div key={idx} className="text-sm text-gray-600 flex items-center gap-2">
+              <div key={idx} className="text-sm text-gray-600 flex items-center gap-2 flex-wrap">
                 <span className={`w-2 h-2 rounded-full ${item.status === 'disponibile' ? 'bg-green-500' : 'bg-red-500'}`}></span>
                 <span className="font-medium">{(item.profiles as any)?.full_name}</span>
                 <span>- {format(new Date(item.date), 'dd/MM')}</span>
                 <span className={`px-1.5 py-0.5 rounded text-xs ${item.status === 'disponibile' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                  {item.status === 'disponibile' ? 'Disponibile' : 'Non disponibile'}
+                  {item.status === 'disponibile' ? `✓ ${item.start_time || ''}-${item.end_time || ''}` : '✗ Non disponibile'}
                 </span>
               </div>
             ))}
@@ -242,7 +268,7 @@ export default function CaregiverCalendar() {
       {/* Modal */}
       {showModal && selectedDate && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-bold text-gray-800 mb-4">
               {format(selectedDate, 'EEEE dd MMMM yyyy', { locale: it })}
             </h3>
@@ -273,6 +299,63 @@ export default function CaregiverCalendar() {
                   </button>
                 </div>
               </div>
+
+              {/* Orari - visibili solo se disponibile */}
+              {modalStatus === 'disponibile' && (
+                <>
+                  {/* Preset orari rapidi */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Orari rapidi</label>
+                    <div className="flex flex-wrap gap-2">
+                      {timePresets.map((preset) => (
+                        <button
+                          key={preset.label}
+                          onClick={() => {
+                            setModalStartTime(preset.start);
+                            setModalEndTime(preset.end);
+                          }}
+                          className={`px-3 py-1.5 rounded-full text-xs font-medium transition border ${
+                            modalStartTime === preset.start && modalEndTime === preset.end
+                              ? 'bg-indigo-500 text-white border-indigo-500'
+                              : 'bg-white text-gray-600 border-gray-300 hover:border-indigo-300 hover:bg-indigo-50'
+                          }`}
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        🕐 Inizio disponibilità
+                      </label>
+                      <input
+                        type="time"
+                        value={modalStartTime}
+                        onChange={(e) => setModalStartTime(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-lg"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        🕐 Fine disponibilità
+                      </label>
+                      <input
+                        type="time"
+                        value={modalEndTime}
+                        onChange={(e) => setModalEndTime(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-lg"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-800">
+                    📅 Sarai disponibile dalle <strong>{modalStartTime}</strong> alle <strong>{modalEndTime}</strong>
+                  </div>
+                </>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Note (opzionale)</label>
