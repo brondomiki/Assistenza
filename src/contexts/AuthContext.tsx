@@ -164,33 +164,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!user) return { error: new Error('Not authenticated') };
 
     try {
-      // 1. Elimina tutte le disponibilità della badante
-      await supabase
-        .from('caregiver_availability')
-        .delete()
-        .eq('user_id', user.id);
+      // Prova a usare la Edge Function per eliminazione completa
+      // La Edge Function elimina l'utente da auth.users (richiede service_role key)
+      const { error: functionError } = await supabase.functions.invoke('delete-user-account', {
+        body: { user_id: user.id }
+      });
 
-      // 2. Elimina tutte le disponibilità dei familiari
-      await supabase
-        .from('family_availability')
-        .delete()
-        .eq('user_id', user.id);
+      if (functionError) {
+        console.warn('Edge Function non disponibile, uso metodo alternativo:', functionError.message);
+        
+        // Fallback: elimina solo i dati correlati (l'utente rimarrà in auth.users)
+        // Questo è il metodo precedente che lascia l'utente in auth.users
+        await supabase
+          .from('caregiver_availability')
+          .delete()
+          .eq('user_id', user.id);
 
-      // 3. Elimina tutte le notifiche
-      await supabase
-        .from('notifications')
-        .delete()
-        .eq('user_id', user.id);
+        await supabase
+          .from('family_availability')
+          .delete()
+          .eq('user_id', user.id);
 
-      // 4. Elimina il profilo
-      await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', user.id);
+        await supabase
+          .from('notifications')
+          .delete()
+          .eq('user_id', user.id);
 
-      // 5. Elimina l'utente da Supabase Auth
-      // Nota: questo richiede il service role key, quindi usiamo un approccio alternativo
-      // L'utente verrà eliminato tramite il trigger ON DELETE CASCADE del database
+        await supabase
+          .from('profiles')
+          .delete()
+          .eq('id', user.id);
+      }
+
+      // Logout
       await supabase.auth.signOut();
       
       setProfile(null);

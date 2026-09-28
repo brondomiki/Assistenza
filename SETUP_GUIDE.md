@@ -50,7 +50,36 @@ Dopo aver registrato il tuo account tramite l'app:
 UPDATE profiles SET role = 'superuser' WHERE email = 'tua-email@esempio.it';
 ```
 
-## Passo 6: Configurare le Notifiche Email
+## Passo 6: Deploy della Edge Function per Eliminazione Account
+
+Per permettere agli utenti di eliminare completamente il proprio account (incluso da `auth.users`):
+
+1. Installa Supabase CLI:
+```bash
+npm install -g supabase
+```
+
+2. Login e link al progetto:
+```bash
+supabase login
+supabase link --project-ref tuo-project-id
+```
+
+3. Configura i secrets necessari:
+```bash
+supabase secrets set SUPABASE_SERVICE_ROLE_KEY=la-tua-service-role-key
+```
+
+La `service_role key` si trova in: **Settings > API > service_role key**
+
+4. Deploy della funzione:
+```bash
+supabase functions deploy delete-user-account
+```
+
+⚠️ **IMPORTANTE**: Senza questa Edge Function, l'eliminazione account rimuoverà solo i dati dalla tabella `profiles` ma l'utente rimarrà in `auth.users`, impedendo la re-registrazione con la stessa email.
+
+## Passo 7: Configurare le Notifiche Email
 
 ### Opzione A: Usare Resend (consigliato)
 
@@ -69,7 +98,7 @@ UPDATE profiles SET role = 'superuser' WHERE email = 'tua-email@esempio.it';
 Le email di conferma registrazione sono già gestite da Supabase Auth.
 Puoi personalizzare i template in **Authentication > Email Templates**.
 
-## Passo 7: Deploy su Vercel
+## Passo 8: Deploy su Vercel
 
 1. Push del codice su GitHub/GitLab
 2. Vai su https://vercel.com e importa il repository
