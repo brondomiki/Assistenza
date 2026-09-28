@@ -7,8 +7,9 @@ import FamilyCalendar from './components/FamilyCalendar';
 import Notifications from './components/Notifications';
 import AdminPanel from './components/AdminPanel';
 import Dashboard from './components/Dashboard';
+import SetupGuide from './components/SetupGuide';
 
-type Page = 'login' | 'register' | 'dashboard' | 'caregiver' | 'family' | 'admin';
+type Page = 'login' | 'register' | 'dashboard' | 'caregiver' | 'family' | 'admin' | 'setup';
 
 function AppContent() {
   const { user, profile, loading, signOut } = useAuth();
@@ -28,6 +29,21 @@ function AppContent() {
   if (!user) {
     if (page === 'register') {
       return <RegisterPage onSwitchToLogin={() => setPage('login')} />;
+    }
+    if (page === 'setup') {
+      return (
+        <div>
+          <div className="fixed top-4 left-4 z-50">
+            <button
+              onClick={() => setPage('login')}
+              className="px-4 py-2 bg-white shadow-lg rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+            >
+              ← Torna al Login
+            </button>
+          </div>
+          <SetupGuide />
+        </div>
+      );
     }
     return <LoginPage onSwitchToRegister={() => setPage('register')} />;
   }
@@ -78,6 +94,14 @@ function AppContent() {
                 <span className="hidden sm:inline">⚙️ </span>Admin
               </button>
             )}
+            <button
+              onClick={() => setPage('setup')}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition ${
+                page === 'setup' ? 'bg-teal-100 text-teal-700' : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <span className="hidden sm:inline">🛠️ </span>Setup
+            </button>
           </nav>
 
           {/* Right side */}
@@ -125,6 +149,7 @@ function AppContent() {
         {page === 'caregiver' && <CaregiverCalendar />}
         {page === 'family' && <FamilyCalendar />}
         {page === 'admin' && <AdminPanel />}
+        {page === 'setup' && <SetupGuide />}
       </main>
 
       {/* Footer */}
