@@ -88,7 +88,7 @@ export default function FamilyCalendar() {
 
     const { data } = await supabase
       .from('family_availability')
-      .select('*, profiles(full_name)')
+      .select('*, profiles(full_name, avatar)')
       .gte('date', monthStart)
       .lte('date', monthEnd);
 
@@ -290,17 +290,35 @@ export default function FamilyCalendar() {
                 
                 {/* Mostra tutte le registrazioni del giorno */}
                 {dayEntries.length > 0 && (
-                  <div className="mt-1 space-y-0.5">
-                    {dayEntries.slice(0, 3).map((entry, i) => (
-                      <div key={i} className={`text-[9px] font-medium leading-tight truncate ${
-                        entry.status === 'disponibile' ? 'text-purple-300' : 'text-red-300'
-                      }`}>
-                        👨 {entry.start_time && entry.end_time ? `${entry.start_time}-${entry.end_time}` : ''}
-                      </div>
-                    ))}
-                    {dayEntries.length > 3 && (
-                      <div className="text-[9px] text-gray-400">+{dayEntries.length - 3} altri</div>
-                    )}
+                  <div className="mt-1 space-y-1">
+                    {/* Avatar grandi */}
+                    <div className="flex items-center gap-1 flex-wrap">
+                      {dayEntries.slice(0, 3).map((entry, i) => (
+                        <span
+                          key={i}
+                          className="text-xl"
+                          title={(entry.profiles as any)?.full_name}
+                        >
+                          {(entry.profiles as any)?.avatar || '👤'}
+                        </span>
+                      ))}
+                      {dayEntries.length > 3 && (
+                        <span className="text-[10px] text-gray-400">+{dayEntries.length - 3}</span>
+                      )}
+                    </div>
+                    {/* Orari */}
+                    <div className="space-y-0.5">
+                      {dayEntries.slice(0, 2).map((entry, i) => (
+                        <div key={i} className={`text-[9px] font-medium leading-tight truncate ${
+                          entry.status === 'disponibile' ? 'text-purple-300' : 'text-red-300'
+                        }`}>
+                          {entry.start_time && entry.end_time ? `${entry.start_time}-${entry.end_time}` : ''}
+                        </div>
+                      ))}
+                      {dayEntries.length > 2 && (
+                        <div className="text-[9px] text-gray-400">+{dayEntries.length - 2} altri</div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -339,6 +357,7 @@ export default function FamilyCalendar() {
           <div className="space-y-1 max-h-40 overflow-y-auto">
             {allFamilyAvailability.slice(0, 10).map((item, idx) => (
               <div key={idx} className="text-sm text-gray-300 flex items-center gap-2 flex-wrap">
+                <span className="text-2xl">{(item.profiles as any)?.avatar || '👤'}</span>
                 <span className={`w-2 h-2 rounded-full ${item.status === 'disponibile' ? 'bg-purple-500' : 'bg-red-500'}`}></span>
                 <span className="font-medium text-white">{(item.profiles as any)?.full_name}</span>
                 <span className="text-gray-400">- {format(new Date(item.date), 'dd/MM')}</span>
