@@ -33,13 +33,13 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-black">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b sticky top-0 z-30">
+      <header className="bg-gray-900 shadow-sm border-b border-gray-800 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="text-2xl">🏠</span>
-            <h1 className="text-xl font-bold text-gray-800 hidden sm:block">Assistenza Anziani</h1>
+            <h1 className="text-xl font-bold text-white hidden sm:block">Assistenza Anziani</h1>
           </div>
 
           {/* Navigation */}
@@ -47,7 +47,7 @@ function AppContent() {
             <button
               onClick={() => setPage('dashboard')}
               className={`px-3 py-2 rounded-lg text-sm font-medium transition ${
-                page === 'dashboard' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-100'
+                page === 'dashboard' ? 'bg-indigo-600 text-white' : 'text-gray-300 hover:bg-gray-800'
               }`}
             >
               <span className="hidden sm:inline">📊 </span>Dashboard
@@ -55,7 +55,7 @@ function AppContent() {
             <button
               onClick={() => setPage('caregiver')}
               className={`px-3 py-2 rounded-lg text-sm font-medium transition ${
-                page === 'caregiver' ? 'bg-green-100 text-green-700' : 'text-gray-600 hover:bg-gray-100'
+                page === 'caregiver' ? 'bg-green-600 text-white' : 'text-gray-300 hover:bg-gray-800'
               }`}
             >
               <span className="hidden sm:inline">👩‍⚕️ </span>Badanti
@@ -63,7 +63,7 @@ function AppContent() {
             <button
               onClick={() => setPage('family')}
               className={`px-3 py-2 rounded-lg text-sm font-medium transition ${
-                page === 'family' ? 'bg-purple-100 text-purple-700' : 'text-gray-600 hover:bg-gray-100'
+                page === 'family' ? 'bg-purple-600 text-white' : 'text-gray-300 hover:bg-gray-800'
               }`}
             >
               <span className="hidden sm:inline">👨‍👩‍👧 </span>Familiari
@@ -72,7 +72,7 @@ function AppContent() {
               <button
                 onClick={() => setPage('admin')}
                 className={`px-3 py-2 rounded-lg text-sm font-medium transition ${
-                  page === 'admin' ? 'bg-orange-100 text-orange-700' : 'text-gray-600 hover:bg-gray-100'
+                  page === 'admin' ? 'bg-orange-600 text-white' : 'text-gray-300 hover:bg-gray-800'
                 }`}
               >
                 <span className="hidden sm:inline">⚙️ </span>Admin
@@ -85,10 +85,10 @@ function AppContent() {
             <Notifications />
             <div className="hidden sm:flex items-center gap-2">
               <div className="text-right">
-                <p className="text-sm font-medium text-gray-800">{profile?.full_name}</p>
-                <p className="text-xs text-gray-500 capitalize">{profile?.role}</p>
+                <p className="text-sm font-medium text-white">{profile?.full_name}</p>
+                <p className="text-xs text-gray-400 capitalize">{profile?.role}</p>
               </div>
-              <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+              <div className="w-8 h-8 bg-indigo-900 rounded-full flex items-center justify-center">
                 <span className="text-sm">
                   {profile?.role === 'badante' ? '👩‍⚕️' : profile?.role === 'superuser' ? '👑' : '👤'}
                 </span>
@@ -96,7 +96,7 @@ function AppContent() {
             </div>
             <button
               onClick={signOut}
-              className="px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition font-medium"
+              className="px-3 py-2 text-sm text-red-400 hover:bg-red-900/30 rounded-lg transition font-medium"
             >
               Esci
             </button>
@@ -107,7 +107,7 @@ function AppContent() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-6">
         {/* Welcome Banner */}
-        <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-6 mb-6 text-white">
+        <div className="bg-gradient-to-r from-indigo-600 to-purple-700 rounded-2xl p-6 mb-6 text-white shadow-lg">
           <h2 className="text-2xl font-bold">
             Ciao, {profile?.full_name}! 👋
           </h2>
@@ -128,8 +128,8 @@ function AppContent() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t mt-8 py-4">
-        <div className="max-w-7xl mx-auto px-4 text-center text-sm text-gray-500">
+      <footer className="bg-gray-900 border-t border-gray-800 mt-8 py-4">
+        <div className="max-w-7xl mx-auto px-4 text-center text-sm text-gray-400">
           <p>Assistenza Anziani - Gestione disponibilità</p>
           <p className="mt-1">Ogni modifica viene notificata via email a tutti gli utenti</p>
         </div>

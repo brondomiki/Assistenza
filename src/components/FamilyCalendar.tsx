@@ -193,39 +193,48 @@ export default function FamilyCalendar() {
     { label: 'Solo pranzo (12-14)', start: '12:00', end: '14:00' },
   ];
 
+  // Function to calculate coverage percentage based on hours
+  function getCoveragePercentage(startTime?: string, endTime?: string): number {
+    if (!startTime || !endTime) return 0;
+    const [startH, startM] = startTime.split(':').map(Number);
+    const [endH, endM] = endTime.split(':').map(Number);
+    const hours = (endH + endM / 60) - (startH + startM / 60);
+    return Math.min((hours / 24) * 100, 100);
+  }
+
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-6">
+    <div className="bg-gray-900 rounded-2xl shadow-lg p-6 border border-gray-800">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+        <h2 className="text-xl font-bold text-white flex items-center gap-2">
           <span className="text-2xl">👨‍👩‍👧‍👦</span> Calendario Familiari (Weekend & Festivi)
         </h2>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-            className="p-2 hover:bg-gray-100 rounded-lg transition"
+            className="p-2 hover:bg-gray-800 rounded-lg transition text-gray-300"
           >
             ←
           </button>
-          <span className="font-semibold text-gray-700 min-w-[150px] text-center">
+          <span className="font-semibold text-white min-w-[150px] text-center">
             {format(currentMonth, 'MMMM yyyy', { locale: it })}
           </span>
           <button
             onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-            className="p-2 hover:bg-gray-100 rounded-lg transition"
+            className="p-2 hover:bg-gray-800 rounded-lg transition text-gray-300"
           >
             →
           </button>
         </div>
       </div>
 
-      <p className="text-sm text-gray-500 mb-4">
+      <p className="text-sm text-gray-400 mb-4">
         💡 Clicca sui giorni del weekend (sabato/domenica) o sui giorni festivi per indicare la tua disponibilità.
       </p>
 
       {/* Calendar Grid */}
       <div className="grid grid-cols-7 gap-1 mb-4">
         {weekDays.map((day) => (
-          <div key={day} className="text-center text-sm font-medium text-gray-500 py-2">
+          <div key={day} className="text-center text-sm font-medium text-gray-400 py-2">
             {day}
           </div>
         ))}
@@ -241,6 +250,9 @@ export default function FamilyCalendar() {
           const dayIsWeekend = isWeekend(day);
           const dayIsHoliday = isItalianHoliday(day);
           const isClickable = isCurrentMonth && (dayIsWeekend || dayIsHoliday);
+          
+          // Calculate coverage for my availability
+          const coverage = myAvail ? getCoveragePercentage(myAvail.start_time, myAvail.end_time) : 0;
 
           return (
             <button
@@ -248,76 +260,89 @@ export default function FamilyCalendar() {
               onClick={() => handleDayClick(day)}
               disabled={!isClickable}
               className={`
-                relative p-2 min-h-[100px] rounded-lg text-sm transition border
-                ${!isClickable ? 'opacity-30 cursor-default' : 'hover:border-purple-300 cursor-pointer'}
-                ${dayIsToday ? 'border-purple-500 border-2' : 'border-gray-100'}
-                ${dayIsHoliday && isCurrentMonth ? 'bg-yellow-50' : ''}
-                ${dayIsWeekend && !dayIsHoliday && isCurrentMonth ? 'bg-purple-50' : ''}
-                ${myAvail?.status === 'disponibile' ? 'bg-green-100 border-green-300' : ''}
-                ${myAvail?.status === 'non_disponibile' ? 'bg-red-100 border-red-300' : ''}
+                relative p-2 min-h-[100px] rounded-lg text-sm transition border overflow-hidden
+                ${!isClickable ? 'opacity-30 cursor-default' : 'hover:border-purple-400 cursor-pointer'}
+                ${dayIsToday ? 'border-purple-500 border-2' : 'border-gray-700'}
+                ${dayIsHoliday && isCurrentMonth ? 'bg-yellow-900/20' : ''}
+                ${dayIsWeekend && !dayIsHoliday && isCurrentMonth ? 'bg-purple-900/20' : 'bg-gray-800'}
               `}
             >
-              <span className={`font-medium ${dayIsToday ? 'text-purple-600' : 'text-gray-700'}`}>
-                {format(day, 'd')}
-              </span>
-              {dayIsHoliday && isCurrentMonth && (
-                <span className="absolute top-0.5 right-0.5 text-xs">🎉</span>
+              {/* Background fill based on coverage */}
+              {myAvail && coverage > 0 && (
+                <div 
+                  className={`absolute bottom-0 left-0 right-0 opacity-80 transition-all duration-300 ${
+                    myAvail.status === 'disponibile' 
+                      ? 'bg-gradient-to-t from-purple-600 to-purple-500' 
+                      : 'bg-gradient-to-t from-red-600 to-red-500'
+                  }`}
+                  style={{ height: `${coverage}%` }}
+                />
               )}
               
-              {/* Mostra tutte le registrazioni del giorno */}
-              {dayEntries.length > 0 && (
-                <div className="mt-1 space-y-0.5">
-                  {dayEntries.slice(0, 3).map((entry, i) => (
-                    <div key={i} className={`text-[9px] font-medium leading-tight truncate ${
-                      entry.status === 'disponibile' ? 'text-green-700' : 'text-red-700'
-                    }`}>
-                      👨 {entry.start_time && entry.end_time ? `${entry.start_time}-${entry.end_time}` : ''}
-                    </div>
-                  ))}
-                  {dayEntries.length > 3 && (
-                    <div className="text-[9px] text-gray-500">+{dayEntries.length - 3} altri</div>
-                  )}
-                </div>
-              )}
-              
-              {/* Se non ci sono registrazioni ma c'è la mia */}
-              {!myAvail && dayEntries.length === 0 && null}
+              {/* Content */}
+              <div className="relative z-10">
+                <span className={`font-medium ${dayIsToday ? 'text-purple-300' : 'text-gray-200'}`}>
+                  {format(day, 'd')}
+                </span>
+                {dayIsHoliday && isCurrentMonth && (
+                  <span className="absolute top-0.5 right-0.5 text-xs">🎉</span>
+                )}
+                
+                {/* Mostra tutte le registrazioni del giorno */}
+                {dayEntries.length > 0 && (
+                  <div className="mt-1 space-y-0.5">
+                    {dayEntries.slice(0, 3).map((entry, i) => (
+                      <div key={i} className={`text-[9px] font-medium leading-tight truncate ${
+                        entry.status === 'disponibile' ? 'text-purple-300' : 'text-red-300'
+                      }`}>
+                        👨 {entry.start_time && entry.end_time ? `${entry.start_time}-${entry.end_time}` : ''}
+                      </div>
+                    ))}
+                    {dayEntries.length > 3 && (
+                      <div className="text-[9px] text-gray-400">+{dayEntries.length - 3} altri</div>
+                    )}
+                  </div>
+                )}
+              </div>
             </button>
           );
         })}
       </div>
 
       {/* Legend */}
-      <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-gray-600">
-        <div className="flex items-center gap-1">
-          <div className="w-4 h-4 bg-green-100 border border-green-300 rounded"></div>
+      <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-gray-300">
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 bg-gradient-to-t from-purple-600 to-purple-500 rounded"></div>
           <span>Disponibile</span>
         </div>
-        <div className="flex items-center gap-1">
-          <div className="w-4 h-4 bg-red-100 border border-red-300 rounded"></div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 bg-gradient-to-t from-red-600 to-red-500 rounded"></div>
           <span>Non disponibile</span>
         </div>
-        <div className="flex items-center gap-1">
-          <div className="w-4 h-4 bg-purple-50 border border-gray-100 rounded"></div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 bg-purple-900/20 border border-gray-700 rounded"></div>
           <span>Weekend</span>
         </div>
-        <div className="flex items-center gap-1">
-          <div className="w-4 h-4 bg-yellow-50 border border-gray-100 rounded"></div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 bg-yellow-900/20 border border-gray-700 rounded"></div>
           <span>Festivo</span>
+        </div>
+        <div className="flex items-center gap-2 ml-auto">
+          <span className="text-xs text-gray-400">📏 Riempimento = ore di copertura</span>
         </div>
       </div>
 
       {/* All family members summary */}
       {allFamilyAvailability.length > 0 && (
-        <div className="mt-6 border-t pt-4">
-          <h3 className="font-semibold text-gray-700 mb-2">Riepilogo disponibilità familiari</h3>
+        <div className="mt-6 border-t border-gray-800 pt-4">
+          <h3 className="font-semibold text-white mb-2">Riepilogo disponibilità familiari</h3>
           <div className="space-y-1 max-h-40 overflow-y-auto">
             {allFamilyAvailability.slice(0, 10).map((item, idx) => (
-              <div key={idx} className="text-sm text-gray-600 flex items-center gap-2 flex-wrap">
-                <span className={`w-2 h-2 rounded-full ${item.status === 'disponibile' ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                <span className="font-medium">{(item.profiles as any)?.full_name}</span>
-                <span>- {format(new Date(item.date), 'dd/MM')}</span>
-                <span className={`px-1.5 py-0.5 rounded text-xs ${item.status === 'disponibile' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+              <div key={idx} className="text-sm text-gray-300 flex items-center gap-2 flex-wrap">
+                <span className={`w-2 h-2 rounded-full ${item.status === 'disponibile' ? 'bg-purple-500' : 'bg-red-500'}`}></span>
+                <span className="font-medium text-white">{(item.profiles as any)?.full_name}</span>
+                <span className="text-gray-400">- {format(new Date(item.date), 'dd/MM')}</span>
+                <span className={`px-1.5 py-0.5 rounded text-xs ${item.status === 'disponibile' ? 'bg-purple-900/50 text-purple-300' : 'bg-red-900/50 text-red-300'}`}>
                   {item.status === 'disponibile' ? '✓' : '✗'} {item.start_time && item.end_time ? `${item.start_time}-${item.end_time}` : ''}
                 </span>
               </div>
@@ -328,12 +353,12 @@ export default function FamilyCalendar() {
 
       {/* Modal */}
       {showModal && selectedDate && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-gray-800 mb-2">
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 rounded-2xl p-6 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto border border-gray-700">
+            <h3 className="text-lg font-bold text-white mb-2">
               {format(selectedDate, 'EEEE dd MMMM yyyy', { locale: it })}
               {(isWeekend(selectedDate) || isItalianHoliday(selectedDate)) && (
-                <span className="ml-2 text-sm font-normal text-purple-600">
+                <span className="ml-2 text-sm font-normal text-purple-400">
                   {isItalianHoliday(selectedDate) ? '🎉 Festivo' : '📅 Weekend'}
                 </span>
               )}
@@ -341,11 +366,11 @@ export default function FamilyCalendar() {
 
             {/* Banner: disponibilità esistente */}
             {selectedDate && availability[format(selectedDate, 'yyyy-MM-dd')] && (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4 flex items-start gap-2">
+              <div className="bg-amber-900/30 border border-amber-700 rounded-lg p-3 mb-4 flex items-start gap-2">
                 <span className="text-lg">ℹ️</span>
-                <div className="text-sm text-amber-800">
+                <div className="text-sm text-amber-300">
                   <p className="font-medium">Hai già inserito una disponibilità per questo giorno</p>
-                  <p className="text-amber-700 mt-0.5">
+                  <p className="text-amber-400 mt-0.5">
                     Puoi modificarla qui sotto oppure rimuoverla completamente con il pulsante in fondo.
                   </p>
                 </div>
@@ -354,14 +379,14 @@ export default function FamilyCalendar() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Stato</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Stato</label>
                 <div className="flex gap-3">
                   <button
                     onClick={() => setModalStatus('disponibile')}
                     className={`flex-1 py-3 rounded-lg font-medium transition ${
                       modalStatus === 'disponibile'
-                        ? 'bg-green-500 text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        ? 'bg-purple-600 text-white'
+                        : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
                     }`}
                   >
                     ✓ Disponibile
@@ -370,8 +395,8 @@ export default function FamilyCalendar() {
                     onClick={() => setModalStatus('non_disponibile')}
                     className={`flex-1 py-3 rounded-lg font-medium transition ${
                       modalStatus === 'non_disponibile'
-                        ? 'bg-red-500 text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        ? 'bg-red-600 text-white'
+                        : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
                     }`}
                   >
                     ✗ Non disponibile
@@ -383,7 +408,7 @@ export default function FamilyCalendar() {
               <>
                 {/* Preset orari rapidi */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Orari rapidi</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Orari rapidi</label>
                   <div className="flex flex-wrap gap-2">
                     {timePresets.map((preset) => (
                       <button
@@ -394,8 +419,8 @@ export default function FamilyCalendar() {
                         }}
                         className={`px-3 py-1.5 rounded-full text-xs font-medium transition border ${
                           modalStartTime === preset.start && modalEndTime === preset.end
-                            ? 'bg-purple-500 text-white border-purple-500'
-                            : 'bg-white text-gray-600 border-gray-300 hover:border-purple-300 hover:bg-purple-50'
+                            ? 'bg-purple-600 text-white border-purple-600'
+                            : 'bg-gray-800 text-gray-300 border-gray-600 hover:border-purple-500 hover:bg-gray-700'
                         }`}
                       >
                         {preset.label}
@@ -406,44 +431,44 @@ export default function FamilyCalendar() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
                       🕐 Inizio
                     </label>
                     <input
                       type="time"
                       value={modalStartTime}
                       onChange={(e) => setModalStartTime(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-lg"
+                      className="w-full px-4 py-3 border border-gray-600 bg-gray-800 text-white rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-lg"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
                       🕐 Fine
                     </label>
                     <input
                       type="time"
                       value={modalEndTime}
                       onChange={(e) => setModalEndTime(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-lg"
+                      className="w-full px-4 py-3 border border-gray-600 bg-gray-800 text-white rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-lg"
                     />
                   </div>
                 </div>
 
                 <div className={`border rounded-lg p-3 text-sm ${
                   modalStatus === 'disponibile' 
-                    ? 'bg-purple-50 border-purple-200 text-purple-800'
-                    : 'bg-red-50 border-red-200 text-red-800'
+                    ? 'bg-purple-900/30 border-purple-700 text-purple-300'
+                    : 'bg-red-900/30 border-red-700 text-red-300'
                 }`}>
                   📅 {modalStatus === 'disponibile' ? 'Sarai disponibile' : 'Non sarai disponibile'} dalle <strong>{modalStartTime}</strong> alle <strong>{modalEndTime}</strong>
                 </div>
               </>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Note (opzionale)</label>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Note (opzionale)</label>
                 <textarea
                   value={modalNotes}
                   onChange={(e) => setModalNotes(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-600 bg-gray-800 text-white rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   rows={3}
                   placeholder="Aggiungi note..."
                 />
@@ -453,7 +478,7 @@ export default function FamilyCalendar() {
                 <div className="flex gap-3">
                   <button
                     onClick={() => setShowModal(false)}
-                    className="flex-1 py-3 border border-gray-300 rounded-lg font-medium text-gray-600 hover:bg-gray-50 transition"
+                    className="flex-1 py-3 border border-gray-600 rounded-lg font-medium text-gray-300 hover:bg-gray-800 transition"
                   >
                     Annulla
                   </button>
@@ -469,7 +494,7 @@ export default function FamilyCalendar() {
                 {selectedDate && availability[format(selectedDate, 'yyyy-MM-dd')] && (
                   <button
                     onClick={removeAvailability}
-                    className="w-full py-3 bg-red-50 border-2 border-red-300 text-red-700 rounded-lg font-medium hover:bg-red-100 transition flex items-center justify-center gap-2"
+                    className="w-full py-3 bg-red-900/30 border-2 border-red-700 text-red-300 rounded-lg font-medium hover:bg-red-900/50 transition flex items-center justify-center gap-2"
                   >
                     <span>🗑️</span>
                     <span>Rimuovi questa disponibilità</span>
