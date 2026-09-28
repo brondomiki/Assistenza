@@ -235,6 +235,7 @@ export default function FamilyCalendar() {
         {days.map((day, idx) => {
           const dateStr = format(day, 'yyyy-MM-dd');
           const myAvail = availability[dateStr];
+          const dayEntries = allFamilyAvailability.filter(e => e.date === dateStr);
           const isCurrentMonth = isSameMonth(day, currentMonth);
           const dayIsToday = isToday(day);
           const dayIsWeekend = isWeekend(day);
@@ -247,7 +248,7 @@ export default function FamilyCalendar() {
               onClick={() => handleDayClick(day)}
               disabled={!isClickable}
               className={`
-                relative p-2 min-h-[75px] rounded-lg text-sm transition border
+                relative p-2 min-h-[100px] rounded-lg text-sm transition border
                 ${!isClickable ? 'opacity-30 cursor-default' : 'hover:border-purple-300 cursor-pointer'}
                 ${dayIsToday ? 'border-purple-500 border-2' : 'border-gray-100'}
                 ${dayIsHoliday && isCurrentMonth ? 'bg-yellow-50' : ''}
@@ -262,22 +263,25 @@ export default function FamilyCalendar() {
               {dayIsHoliday && isCurrentMonth && (
                 <span className="absolute top-0.5 right-0.5 text-xs">🎉</span>
               )}
-              {myAvail && (
+              
+              {/* Mostra tutte le registrazioni del giorno */}
+              {dayEntries.length > 0 && (
                 <div className="mt-1 space-y-0.5">
-                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                    myAvail.status === 'disponibile' 
-                      ? 'bg-green-500 text-white' 
-                      : 'bg-red-500 text-white'
-                  }`}>
-                    {myAvail.status === 'disponibile' ? '✓' : '✗'}
-                  </span>
-                  {myAvail.status === 'disponibile' && myAvail.start_time && myAvail.end_time && (
-                    <div className="text-[10px] text-green-800 font-medium leading-tight">
-                      {myAvail.start_time}-{myAvail.end_time}
+                  {dayEntries.slice(0, 3).map((entry, i) => (
+                    <div key={i} className={`text-[9px] font-medium leading-tight truncate ${
+                      entry.status === 'disponibile' ? 'text-green-700' : 'text-red-700'
+                    }`}>
+                      👨 {entry.start_time && entry.end_time ? `${entry.start_time}-${entry.end_time}` : ''}
                     </div>
+                  ))}
+                  {dayEntries.length > 3 && (
+                    <div className="text-[9px] text-gray-500">+{dayEntries.length - 3} altri</div>
                   )}
                 </div>
               )}
+              
+              {/* Se non ci sono registrazioni ma c'è la mia */}
+              {!myAvail && dayEntries.length === 0 && null}
             </button>
           );
         })}
@@ -314,7 +318,7 @@ export default function FamilyCalendar() {
                 <span className="font-medium">{(item.profiles as any)?.full_name}</span>
                 <span>- {format(new Date(item.date), 'dd/MM')}</span>
                 <span className={`px-1.5 py-0.5 rounded text-xs ${item.status === 'disponibile' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                  {item.status === 'disponibile' ? `✓ ${item.start_time || ''}-${item.end_time || ''}` : '✗ Non disponibile'}
+                  {item.status === 'disponibile' ? '✓' : '✗'} {item.start_time && item.end_time ? `${item.start_time}-${item.end_time}` : ''}
                 </span>
               </div>
             ))}
