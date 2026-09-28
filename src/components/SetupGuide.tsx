@@ -11,7 +11,7 @@ export default function SetupGuide() {
         <div className="text-center mb-8">
           <span className="text-5xl mb-4 block">🛠️</span>
           <h1 className="text-3xl font-bold text-gray-800">Configurazione Iniziale</h1>
-          <p className="text-gray-500 mt-2">Segui questi passi per configurare CareScheduler</p>
+          <p className="text-gray-500 mt-2">Segui questi passi per configurare Assistenza Anziani</p>
         </div>
 
         {/* Progress Bar */}
@@ -58,7 +58,7 @@ export default function SetupGuide() {
                       <span className="w-6 h-6 bg-indigo-500 text-white rounded-full flex items-center justify-center text-sm font-bold shrink-0">2</span>
                       <div>
                         <p className="text-gray-700">Clicca <strong>"New Project"</strong></p>
-                        <p className="text-sm text-gray-500 mt-1">Dai un nome al progetto (es: CareScheduler)</p>
+                        <p className="text-sm text-gray-500 mt-1">Dai un nome al progetto (es: Assistenza Anziani)</p>
                         <p className="text-sm text-gray-500">Scegli una password per il database (ANNOTATELA!)</p>
                         <p className="text-sm text-gray-500">Region: West EU (Irlanda)</p>
                       </div>

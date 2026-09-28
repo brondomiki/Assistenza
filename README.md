@@ -1,4 +1,4 @@
-# CareScheduler - Portale Gestione Disponibilità Assistenza
+# Assistenza Anziani - Portale Gestione Disponibilità
 
 Un portale web per la gestione della disponibilità di badanti e familiari per l'assistenza di una persona anziana.
 
@@ -16,6 +16,8 @@ Un portale web per la gestione della disponibilità di badanti e familiari per l
 - **Frontend**: React + TypeScript + Tailwind CSS + Vite
 - **Backend/Database**: Supabase (Auth, Database, Real-time)
 - **Deploy**: Vercel
+
+Il portale è stato progettato per facilitare la coordinazione tra badanti e familiari nella gestione dell'assistenza a persone anziane.
 
 ## 📋 Setup
 

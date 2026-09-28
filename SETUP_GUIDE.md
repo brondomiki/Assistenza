@@ -1,4 +1,4 @@
-# Guida Setup Completo - CareScheduler
+# Guida Setup Completo - Assistenza Anziani
 
 ## Passo 1: Creare il progetto Supabase
 
