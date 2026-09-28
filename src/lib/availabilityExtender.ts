@@ -48,7 +48,7 @@ export async function extendCaregiverAvailability(userId: string, targetMonth: D
           date: format(day, 'yyyy-MM-dd'),
           status: 'disponibile' as const,
           start_time: '00:00',
-          end_time: '23:59',
+          end_time: '12:00',
         }));
 
       if (availabilities.length > 0) {

@@ -65,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function createDefaultCaregiverAvailability(userId: string) {
     // Crea disponibilità di default per i prossimi 12 mesi
-    // Lunedì-Sabato: 00:00-23:59 (24 ore)
+    // Lunedì-Sabato: 00:00-12:00 (fino a mezzogiorno)
     const today = new Date();
     const startDate = startOfMonth(today);
     const endDate = addMonths(startDate, 12);
@@ -79,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         date: format(day, 'yyyy-MM-dd'),
         status: 'disponibile' as const,
         start_time: '00:00',
-        end_time: '23:59',
+        end_time: '12:00',
       }));
 
     if (availabilities.length > 0) {
