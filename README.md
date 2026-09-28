@@ -102,7 +102,7 @@ src/
 ## 🔐 Ruoli Utente
 
 - **Superuser**: Accesso completo, gestione utenti, modifica ruoli
-- **Badante**: Gestisce il calendario della propria disponibilità
+- **Badante**: Gestisce il calendario della propria disponibilità (default: disponibile Lun-Sab 08:00-12:00)
 - **Familiare**: Gestisce la disponibilità nei weekend e festivi
 
 ## 📧 Notifiche Email
