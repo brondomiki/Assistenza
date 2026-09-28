@@ -1,7 +1,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { supabase, Profile, UserRole } from '../lib/supabase';
 import { User, Session } from '@supabase/supabase-js';
-import { startOfMonth, endOfMonth, eachDayOfInterval, format, isSunday } from 'date-fns';
+import { startOfMonth, eachDayOfInterval, format, isSunday, addMonths } from 'date-fns';
 
 interface AuthContextType {
   user: User | null;
@@ -64,14 +64,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function createDefaultCaregiverAvailability(userId: string) {
-    // Crea disponibilità di default per il mese corrente
+    // Crea disponibilità di default per i prossimi 12 mesi
     // Lunedì-Sabato: 08:00-12:00
     const today = new Date();
-    const monthStart = startOfMonth(today);
-    const monthEnd = endOfMonth(today);
-    const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
+    const startDate = startOfMonth(today);
+    const endDate = addMonths(startDate, 12);
+    
+    const allDays = eachDayOfInterval({ start: startDate, end: endDate });
 
-    const availabilities = days
+    const availabilities = allDays
       .filter(day => !isSunday(day)) // Escludi domenica
       .map(day => ({
         user_id: userId,
@@ -82,7 +83,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }));
 
     if (availabilities.length > 0) {
-      await supabase.from('caregiver_availability').insert(availabilities);
+      // Inserisci in batch (Supabase ha limiti di dimensioni)
+      const batchSize = 100;
+      for (let i = 0; i < availabilities.length; i += batchSize) {
+        const batch = availabilities.slice(i, i + batchSize);
+        await supabase.from('caregiver_availability').insert(batch);
+      }
     }
   }
 
