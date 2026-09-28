@@ -7,12 +7,14 @@ import FamilyCalendar from './components/FamilyCalendar';
 import Notifications from './components/Notifications';
 import AdminPanel from './components/AdminPanel';
 import Dashboard from './components/Dashboard';
+import ProfileModal from './components/ProfileModal';
 
 type Page = 'login' | 'register' | 'dashboard' | 'caregiver' | 'family' | 'admin';
 
 function AppContent() {
   const { user, profile, loading, signOut } = useAuth();
   const [page, setPage] = useState<Page>('dashboard');
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   if (loading) {
     return (
@@ -88,11 +90,15 @@ function AppContent() {
                 <p className="text-sm font-medium text-white">{profile?.full_name}</p>
                 <p className="text-xs text-gray-400 capitalize">{profile?.role}</p>
               </div>
-              <div className="w-8 h-8 bg-indigo-900 rounded-full flex items-center justify-center">
-                <span className="text-sm">
-                  {profile?.role === 'badante' ? '👩‍⚕️' : profile?.role === 'superuser' ? '👑' : '👤'}
+              <button
+                onClick={() => setShowProfileModal(true)}
+                className="w-10 h-10 bg-indigo-900 rounded-full flex items-center justify-center hover:bg-indigo-800 transition cursor-pointer border-2 border-indigo-700 hover:border-indigo-500"
+                title="Modifica profilo"
+              >
+                <span className="text-xl">
+                  {profile?.avatar || (profile?.role === 'badante' ? '👩‍⚕️' : profile?.role === 'superuser' ? '👑' : '👤')}
                 </span>
-              </div>
+              </button>
             </div>
             <button
               onClick={signOut}
@@ -126,6 +132,11 @@ function AppContent() {
         {page === 'family' && <FamilyCalendar />}
         {page === 'admin' && <AdminPanel />}
       </main>
+
+      {/* Profile Modal */}
+      {showProfileModal && (
+        <ProfileModal onClose={() => setShowProfileModal(false)} />
+      )}
 
       {/* Footer */}
       <footer className="bg-gray-900 border-t border-gray-800 mt-8 py-4">

@@ -2,6 +2,25 @@ import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { UserRole } from '../lib/supabase';
 
+const AVATAR_OPTIONS = [
+  { emoji: '👨', label: 'Uomo' },
+  { emoji: '👩', label: 'Donna' },
+  { emoji: '👴', label: 'Anziano' },
+  { emoji: '👵', label: 'Anziana' },
+  { emoji: '👨‍⚕️', label: 'Dottore' },
+  { emoji: '👩‍⚕️', label: 'Dottoressa' },
+  { emoji: '👨‍👩‍👧', label: 'Famiglia' },
+  { emoji: '👨‍👩‍👦', label: 'Famiglia' },
+  { emoji: '👨‍👧', label: 'Papà' },
+  { emoji: '👩‍👧', label: 'Mamma' },
+  { emoji: '👨‍👦', label: 'Papà' },
+  { emoji: '👩‍👦', label: 'Mamma' },
+  { emoji: '🧑', label: 'Persona' },
+  { emoji: '👤', label: 'Utente' },
+  { emoji: '🙂', label: 'Sorridente' },
+  { emoji: '😊', label: 'Felice' },
+];
+
 export default function RegisterPage({ onSwitchToLogin }: { onSwitchToLogin: () => void }) {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -9,6 +28,7 @@ export default function RegisterPage({ onSwitchToLogin }: { onSwitchToLogin: () 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [role, setRole] = useState<UserRole>('familiare');
+  const [avatar, setAvatar] = useState('👤');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -29,7 +49,7 @@ export default function RegisterPage({ onSwitchToLogin }: { onSwitchToLogin: () 
     }
 
     setLoading(true);
-    const { error, requiresEmailConfirmation } = await signUp(email, password, fullName, role, phone);
+    const { error, requiresEmailConfirmation } = await signUp(email, password, fullName, role, phone, avatar);
     
     if (error) {
       setError(error.message === 'User already registered'
@@ -87,6 +107,28 @@ export default function RegisterPage({ onSwitchToLogin }: { onSwitchToLogin: () 
               {error}
             </div>
           )}
+
+          {/* Avatar Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Scegli il tuo avatar</label>
+            <div className="grid grid-cols-8 gap-2">
+              {AVATAR_OPTIONS.map((option) => (
+                <button
+                  key={option.emoji}
+                  type="button"
+                  onClick={() => setAvatar(option.emoji)}
+                  className={`w-10 h-10 rounded-lg text-2xl flex items-center justify-center transition ${
+                    avatar === option.emoji
+                      ? 'bg-indigo-100 border-2 border-indigo-500 scale-110'
+                      : 'bg-gray-50 border border-gray-200 hover:bg-gray-100'
+                  }`}
+                  title={option.label}
+                >
+                  {option.emoji}
+                </button>
+              ))}
+            </div>
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Nome completo</label>

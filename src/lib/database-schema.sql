@@ -10,6 +10,7 @@ CREATE TABLE profiles (
   full_name TEXT NOT NULL,
   role TEXT NOT NULL CHECK (role IN ('superuser', 'badante', 'familiare')) DEFAULT 'familiare',
   phone TEXT,
+  avatar TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -156,6 +157,7 @@ CREATE TRIGGER set_family_updated_at
 -- ALTER TABLE caregiver_availability ADD COLUMN IF NOT EXISTS end_time TIME;
 -- ALTER TABLE family_availability ADD COLUMN IF NOT EXISTS start_time TIME;
 -- ALTER TABLE family_availability ADD COLUMN IF NOT EXISTS end_time TIME;
+-- ALTER TABLE profiles ADD COLUMN IF NOT EXISTS avatar TEXT;
 --
 -- Aggiorna le policies di sicurezza (previeni modifica inserimenti altrui):
 -- DROP POLICY IF EXISTS "Le badanti possono gestire la propria disponibilità" ON caregiver_availability;

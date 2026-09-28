@@ -7,9 +7,10 @@ interface AuthContextType {
   profile: Profile | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, fullName: string, role: UserRole, phone?: string) => Promise<{ error: any; requiresEmailConfirmation: boolean }>;
+  signUp: (email: string, password: string, fullName: string, role: UserRole, phone?: string, avatar?: string) => Promise<{ error: any; requiresEmailConfirmation: boolean }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
+  updateProfile: (updates: Partial<Profile>) => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,7 +22,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then((result) => {
+      const session = result.data.session;
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -31,7 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const authChange = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -41,6 +43,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false);
       }
     });
+
+    const subscription = authChange.data.subscription;
 
     return () => subscription.unsubscribe();
   }, []);
@@ -58,25 +62,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   }
 
-  async function signUp(email: string, password: string, fullName: string, role: UserRole, phone?: string) {
-    const { data, error } = await supabase.auth.signUp({
+  async function signUp(email: string, password: string, fullName: string, role: UserRole, phone?: string, avatar?: string) {
+    const metaData = { full_name: fullName, role: role };
+    const signUpOptions = { data: metaData };
+    
+    const result = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: {
-          full_name: fullName,
-          role: role,
-        }
-      }
+      options: signUpOptions
     });
+
+    const data = result.data;
+    const error = result.error;
 
     if (error) {
       return { error, requiresEmailConfirmation: false };
     }
 
-    // Aggiorna il profilo con il telefono se fornito
-    if (!error && data.user && phone) {
-      await supabase.from('profiles').update({ phone }).eq('id', data.user.id);
+    // Aggiorna il profilo con telefono e avatar se forniti
+    if (!error && data.user) {
+      const updates: any = {};
+      if (phone) updates.phone = phone;
+      if (avatar) updates.avatar = avatar;
+      
+      if (Object.keys(updates).length > 0) {
+        await supabase.from('profiles').update(updates).eq('id', data.user.id);
+      }
     }
 
     // Controlla se l'utente è già autenticato (conferma email disabilitata)
@@ -84,6 +95,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const requiresEmailConfirmation = !data.session;
 
     return { error: null, requiresEmailConfirmation };
+  }
+
+  async function updateProfile(updates: Partial<Profile>) {
+    if (!user) return { error: new Error('Not authenticated') };
+
+    const { error } = await supabase
+      .from('profiles')
+      .update(updates)
+      .eq('id', user.id);
+
+    if (!error) {
+      // Aggiorna il profilo nel context
+      await fetchProfile(user.id);
+    }
+
+    return { error };
   }
 
   async function signIn(email: string, password: string) {
@@ -97,7 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, profile, session, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, profile, session, loading, signUp, signIn, signOut, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

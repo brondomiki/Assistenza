@@ -14,6 +14,7 @@ export interface Profile {
   full_name: string;
   role: UserRole;
   phone?: string;
+  avatar?: string;
   created_at: string;
 }
 
