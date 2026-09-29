@@ -620,6 +620,22 @@ export default function Dashboard() {
                       // Calcola la percentuale di copertura
                       const coveragePercentage = Math.round((coveredMinutes / (24 * 60)) * 100);
                       
+                      // Calcola le fasce orarie scoperte
+                      const uncoveredIntervals: Array<{ start: number; end: number }> = [];
+                      let lastEnd = 0;
+                      
+                      merged.forEach(interval => {
+                        if (interval.start > lastEnd) {
+                          uncoveredIntervals.push({ start: lastEnd, end: interval.start });
+                        }
+                        lastEnd = interval.end;
+                      });
+                      
+                      // Aggiungi l'intervallo finale se non arriva a 24:00
+                      if (lastEnd < 24 * 60) {
+                        uncoveredIntervals.push({ start: lastEnd, end: 24 * 60 });
+                      }
+                      
                       return (
                         <div className="border-t border-gray-700 pt-3">
                           <div className="flex items-center justify-between mb-3">
@@ -687,6 +703,35 @@ export default function Dashboard() {
                               })}
                             </div>
                           </div>
+                          
+                          {/* Fasce orarie scoperte */}
+                          {uncoveredIntervals.length > 0 && (
+                            <div className="mt-3">
+                              <p className="text-xs text-gray-400 mb-2">⚠️ Fasce orarie scoperte:</p>
+                              <div className="space-y-1">
+                                {uncoveredIntervals.map((interval, idx) => {
+                                  const startH = Math.floor(interval.start / 60).toString().padStart(2, '0');
+                                  const startM = (interval.start % 60).toString().padStart(2, '0');
+                                  const endH = Math.floor(interval.end / 60).toString().padStart(2, '0');
+                                  const endM = (interval.end % 60).toString().padStart(2, '0');
+                                  const duration = interval.end - interval.start;
+                                  const durationH = Math.floor(duration / 60);
+                                  const durationM = duration % 60;
+                                  
+                                  return (
+                                    <div key={idx} className="flex items-center gap-2 text-sm">
+                                      <span className="text-orange-400 font-mono">
+                                        {startH}:{startM} - {endH}:{endM}
+                                      </span>
+                                      <span className="text-gray-500 text-xs">
+                                        ({durationH}h {durationM > 0 ? `${durationM}m` : ''})
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
                           
                           {uncoveredMinutes > 0 && (
                             <div className="mt-3 bg-orange-900/30 border border-orange-700 rounded p-2">
