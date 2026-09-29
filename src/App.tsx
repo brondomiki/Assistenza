@@ -113,22 +113,26 @@ function AppContent() {
               >
                 📊 Dashboard
               </button>
-              <button
-                onClick={() => { setPage('caregiver'); setShowMobileMenu(false); }}
-                className={`px-4 py-3 rounded-lg text-left font-medium transition ${
-                  page === 'caregiver' ? 'bg-green-600 text-white' : 'text-gray-300 hover:bg-gray-800'
-                }`}
-              >
-                👩‍⚕️ Badanti
-              </button>
-              <button
-                onClick={() => { setPage('family'); setShowMobileMenu(false); }}
-                className={`px-4 py-3 rounded-lg text-left font-medium transition ${
-                  page === 'family' ? 'bg-purple-600 text-white' : 'text-gray-300 hover:bg-gray-800'
-                }`}
-              >
-                👨‍👩‍👧 Familiari
-              </button>
+              {(profile?.role === 'badante' || profile?.role === 'superuser') && (
+                <button
+                  onClick={() => { setPage('caregiver'); setShowMobileMenu(false); }}
+                  className={`px-4 py-3 rounded-lg text-left font-medium transition ${
+                    page === 'caregiver' ? 'bg-green-600 text-white' : 'text-gray-300 hover:bg-gray-800'
+                  }`}
+                >
+                  👩‍⚕️ Badanti
+                </button>
+              )}
+              {(profile?.role === 'familiare' || profile?.role === 'superuser') && (
+                <button
+                  onClick={() => { setPage('family'); setShowMobileMenu(false); }}
+                  className={`px-4 py-3 rounded-lg text-left font-medium transition ${
+                    page === 'family' ? 'bg-purple-600 text-white' : 'text-gray-300 hover:bg-gray-800'
+                  }`}
+                >
+                  👨‍👩‍👧 Familiari
+                </button>
+              )}
               {profile?.role === 'superuser' && (
                 <button
                   onClick={() => { setPage('admin'); setShowMobileMenu(false); }}
@@ -162,15 +166,15 @@ function AppContent() {
               ? 'Gestisci la tua disponibilità come badante'
               : profile?.role === 'superuser'
               ? 'Hai accesso completo al sistema di gestione'
-              : 'Gestisci la tua disponibilità come familiare nei weekend e festivi'}
+              : 'Gestisci la tua disponibilità come familiare'}
           </p>
         </div>
 
         {/* Page Content */}
         {page === 'dashboard' && <Dashboard />}
-        {page === 'caregiver' && <CaregiverCalendar />}
-        {page === 'family' && <FamilyCalendar />}
-        {page === 'admin' && <AdminPanel />}
+        {page === 'caregiver' && profile?.role === 'badante' && <CaregiverCalendar />}
+        {page === 'family' && profile?.role === 'familiare' && <FamilyCalendar />}
+        {page === 'admin' && profile?.role === 'superuser' && <AdminPanel />}
       </main>
 
       {/* Profile Modal */}
