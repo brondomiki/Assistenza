@@ -1,21 +1,22 @@
 import { usePushNotifications } from '../hooks/usePushNotifications';
 
 export default function PushNotificationButton() {
-  const { permission, isSupported, requestPermission, unsubscribeFromPush } = usePushNotifications();
+  const { permission, isSupported, requestPermission } = usePushNotifications();
 
   if (!isSupported) {
     return null; // Non mostrare il pulsante se le notifiche non sono supportate
   }
 
   const handleClick = async () => {
-    if (permission === 'granted') {
-      // Già abilitate, chiedi se vuole disabilitare
-      if (confirm('Vuoi disabilitare le notifiche push?')) {
-        await unsubscribeFromPush();
-      }
-    } else {
-      // Richiedi il permesso
+    if (permission === 'denied') {
+      alert('Le notifiche sono bloccate. Per riabilitarle:\n\n• Chrome: Impostazioni → Privacy e sicurezza → Notifiche\n• Safari: Preferenze → Siti web → Notifiche');
+      return;
+    }
+
+    if (permission === 'default') {
       await requestPermission();
+    } else if (permission === 'granted') {
+      alert('✅ Le notifiche sono già attive!\n\nRiceverai una notifica ogni volta che qualcuno inserisce o modifica una disponibilità.');
     }
   };
 
@@ -44,13 +45,13 @@ export default function PushNotificationButton() {
   return (
     <button
       onClick={handleClick}
-      className={`px-4 py-2 rounded-lg font-medium transition ${getButtonStyle()}`}
+      className={`px-3 py-2 rounded-lg font-medium transition text-sm ${getButtonStyle()}`}
       title={
         permission === 'denied'
           ? 'Le notifiche sono bloccate. Abilitale dalle impostazioni del browser.'
           : permission === 'granted'
-          ? 'Riceverai notifiche anche a telefono bloccato'
-          : 'Clicca per attivare le notifiche push'
+          ? 'Riceverai notifiche quando l\'app è aperta'
+          : 'Clicca per attivare le notifiche'
       }
     >
       {getButtonText()}

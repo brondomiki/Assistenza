@@ -9,6 +9,7 @@ import AdminPanel from './components/AdminPanel';
 import Dashboard from './components/Dashboard';
 import ProfileModal from './components/ProfileModal';
 import PushNotificationButton from './components/PushNotificationButton';
+import ToastNotification from './components/ToastNotification';
 
 type Page = 'login' | 'register' | 'dashboard' | 'caregiver' | 'family' | 'admin';
 
@@ -38,6 +39,9 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-black">
+      {/* Toast Notification */}
+      <ToastNotification />
+      
       {/* Header */}
       <header className="bg-gray-900 shadow-sm border-b border-gray-800 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
