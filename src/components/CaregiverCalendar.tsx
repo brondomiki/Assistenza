@@ -269,6 +269,7 @@ export default function CaregiverCalendar() {
       await sendNotification(
         `${profile?.full_name} ha rimosso una fascia oraria`
       );
+      setShowModal(false);
       fetchMyAvailability();
       fetchAllAvailability();
     }
@@ -341,7 +342,7 @@ export default function CaregiverCalendar() {
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
         {days.map((day, idx) => {
           const dateStr = format(day, 'yyyy-MM-dd');
           const dayEntries = allCaregiverAvailability.filter(e => e.date === dateStr);
@@ -355,7 +356,7 @@ export default function CaregiverCalendar() {
               onClick={() => handleDayClick(day)}
               disabled={!isCurrentMonth}
               className={`
-                relative p-2 min-h-[100px] rounded-lg text-sm transition border overflow-hidden
+                relative p-1 sm:p-2 min-h-[60px] sm:min-h-[100px] rounded-lg text-xs sm:text-sm transition border overflow-hidden
                 ${!isCurrentMonth ? 'opacity-30 cursor-default' : 'hover:border-indigo-400 cursor-pointer'}
                 ${dayIsToday ? 'border-indigo-500 border-2' : 'border-gray-700'}
                 ${dayIsWeekend && isCurrentMonth ? 'bg-orange-900/20' : 'bg-gray-800'}
@@ -367,31 +368,31 @@ export default function CaregiverCalendar() {
                 </span>
                 
                 {dayEntries.length > 0 && (
-                  <div className="mt-1 space-y-1">
-                    <div className="flex items-center gap-1 flex-wrap">
+                  <div className="mt-0.5 sm:mt-1 space-y-0.5 sm:space-y-1">
+                    <div className="flex items-center gap-0.5 sm:gap-1 flex-wrap">
                       {dayEntries.slice(0, 3).map((entry, i) => (
                         <span
                           key={i}
-                          className="text-xl"
+                          className="text-sm sm:text-xl"
                           title={(entry.profiles as any)?.full_name}
                         >
                           {(entry.profiles as any)?.avatar || '👤'}
                         </span>
                       ))}
                       {dayEntries.length > 3 && (
-                        <span className="text-[10px] text-gray-400">+{dayEntries.length - 3}</span>
+                        <span className="text-[8px] sm:text-[10px] text-gray-400">+{dayEntries.length - 3}</span>
                       )}
                     </div>
-                    <div className="space-y-0.5">
+                    <div className="space-y-0 sm:space-y-0.5">
                       {dayEntries.slice(0, 2).map((entry, i) => (
-                        <div key={i} className={`text-[9px] font-medium leading-tight truncate ${
+                        <div key={i} className={`text-[8px] sm:text-[9px] font-medium leading-tight truncate ${
                           entry.status === 'disponibile' ? 'text-green-300' : 'text-red-300'
                         }`}>
                           {entry.start_time && entry.end_time ? `${entry.start_time}-${entry.end_time}` : ''}
                         </div>
                       ))}
                       {dayEntries.length > 2 && (
-                        <div className="text-[9px] text-gray-400">+{dayEntries.length - 2} altre</div>
+                        <div className="text-[8px] sm:text-[9px] text-gray-400">+{dayEntries.length - 2} altre</div>
                       )}
                     </div>
                   </div>
