@@ -1,11 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useInAppNotifications } from '../hooks/useInAppNotifications';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function ToastNotification() {
+  const { user } = useAuth();
   const { notifications, unreadCount } = useInAppNotifications();
   const [showToast, setShowToast] = useState(false);
   const [currentNotification, setCurrentNotification] = useState<string>('');
   const [previousUnreadCount, setPreviousUnreadCount] = useState(unreadCount);
+
+  // Non renderizzare se l'utente non è loggato
+  if (!user) return null;
 
   useEffect(() => {
     // Mostra toast quando arriva una nuova notifica
