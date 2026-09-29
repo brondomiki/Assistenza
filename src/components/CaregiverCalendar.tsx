@@ -282,6 +282,7 @@ export default function CaregiverCalendar() {
   const weekDays = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
 
   const timePresets = [
+    { label: '🌅 Giorno intero', start: '00:00', end: '23:59' },
     { label: 'Mattina (8-13)', start: '08:00', end: '13:00' },
     { label: 'Pomeriggio (13-18)', start: '13:00', end: '18:00' },
     { label: 'Giornata (8-17)', start: '08:00', end: '17:00' },
