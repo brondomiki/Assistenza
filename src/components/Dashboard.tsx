@@ -206,53 +206,6 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-green-900/50 to-green-800/50 rounded-xl p-5 border border-green-700">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl">👩‍⚕️</span>
-            <div>
-              <p className="text-sm text-green-300 font-medium">Badanti Disponibili</p>
-              <p className="text-2xl font-bold text-green-200">{stats.caregiverAvailable}</p>
-              <p className="text-xs text-green-400">questo mese</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-red-900/50 to-red-800/50 rounded-xl p-5 border border-red-700">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl">🚫</span>
-            <div>
-              <p className="text-sm text-red-300 font-medium">Badanti Non Disponibili</p>
-              <p className="text-2xl font-bold text-red-200">{stats.caregiverUnavailable}</p>
-              <p className="text-xs text-red-400">questo mese</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-purple-900/50 to-purple-800/50 rounded-xl p-5 border border-purple-700">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl">👨‍👩‍👧</span>
-            <div>
-              <p className="text-sm text-purple-300 font-medium">Familiari Disponibili</p>
-              <p className="text-2xl font-bold text-purple-200">{stats.familyAvailable}</p>
-              <p className="text-xs text-purple-400">questo mese</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-orange-900/50 to-orange-800/50 rounded-xl p-5 border border-orange-700">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl">📅</span>
-            <div>
-              <p className="text-sm text-orange-300 font-medium">Familiari Non Disponibili</p>
-              <p className="text-2xl font-bold text-orange-200">{stats.familyUnavailable}</p>
-              <p className="text-xs text-orange-400">questo mese</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Today Overview */}
       <div className="bg-gray-900 rounded-2xl shadow-lg p-6 border border-gray-800">
         <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">

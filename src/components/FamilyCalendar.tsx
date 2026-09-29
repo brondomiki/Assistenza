@@ -350,26 +350,6 @@ export default function FamilyCalendar() {
         </div>
       </div>
 
-      {/* All family members summary */}
-      {allFamilyAvailability.length > 0 && (
-        <div className="mt-6 border-t border-gray-800 pt-4">
-          <h3 className="font-semibold text-white mb-2">Riepilogo disponibilità familiari</h3>
-          <div className="space-y-1 max-h-40 overflow-y-auto">
-            {allFamilyAvailability.slice(0, 10).map((item, idx) => (
-              <div key={idx} className="text-sm text-gray-300 flex items-center gap-2 flex-wrap">
-                <span className="text-2xl">{(item.profiles as any)?.avatar || '👤'}</span>
-                <span className={`w-2 h-2 rounded-full ${item.status === 'disponibile' ? 'bg-purple-500' : 'bg-red-500'}`}></span>
-                <span className="font-medium text-white">{(item.profiles as any)?.full_name}</span>
-                <span className="text-gray-400">- {format(new Date(item.date), 'dd/MM')}</span>
-                <span className={`px-1.5 py-0.5 rounded text-xs ${item.status === 'disponibile' ? 'bg-purple-900/50 text-purple-300' : 'bg-red-900/50 text-red-300'}`}>
-                  {item.status === 'disponibile' ? '✓' : '✗'} {item.start_time && item.end_time ? `${item.start_time}-${item.end_time}` : ''}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Modal */}
       {showModal && selectedDate && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
