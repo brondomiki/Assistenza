@@ -13,37 +13,81 @@ import {
   endOfWeek,
   isToday,
   isWeekend,
-  parseISO,
 } from 'date-fns';
 import { it } from 'date-fns/locale';
-
-// Funzione helper per determinare se una disponibilità è precompilata
-function isPrecompiledAvailability(date: Date, startTime?: string, endTime?: string): boolean {
-  if (!startTime || !endTime) return false;
-  
-  const dayOfWeek = date.getDay(); // 0=Dom, 1=Lun, ..., 5=Ven, 6=Sab
-  
-  // Domenica: nessuna disponibilità precompilata
-  if (dayOfWeek === 0) return false;
-  
-  // Lunedì-Venerdì: 00:00-23:59
-  if (dayOfWeek >= 1 && dayOfWeek <= 5) {
-    return startTime === '00:00' && endTime === '23:59';
-  }
-  
-  // Sabato: 00:00-12:00
-  if (dayOfWeek === 6) {
-    return startTime === '00:00' && endTime === '12:00';
-  }
-  
-  return false;
-}
 import { extendCaregiverAvailability } from '../lib/availabilityExtender';
+
+type AvailabilityEntry = {
+  id: string;
+  status: string;
+  notes?: string;
+  start_time?: string;
+  end_time?: string;
+};
+
+// Funzione helper per calcolare lo split degli intervalli
+function calculateSplitIntervals(
+  existingIntervals: Array<{ start_time: string; end_time: string; status: string }>,
+  newInterval: { start_time: string; end_time: string; status: string }
+): Array<{ start_time: string; end_time: string; status: string }> {
+  const timeToMinutes = (time: string) => {
+    const [h, m] = time.split(':').map(Number);
+    return h * 60 + m;
+  };
+  
+  const minutesToTime = (mins: number) => {
+    const h = Math.floor(mins / 60).toString().padStart(2, '0');
+    const m = (mins % 60).toString().padStart(2, '0');
+    return `${h}:${m}`;
+  };
+  
+  const newStart = timeToMinutes(newInterval.start_time);
+  const newEnd = timeToMinutes(newInterval.end_time);
+  
+  const result: Array<{ start_time: string; end_time: string; status: string }> = [];
+  
+  existingIntervals.forEach(interval => {
+    const intStart = timeToMinutes(interval.start_time);
+    const intEnd = timeToMinutes(interval.end_time);
+    
+    // Se non c'è sovrapposizione, mantieni l'intervallo originale
+    if (newEnd <= intStart || newStart >= intEnd) {
+      result.push(interval);
+      return;
+    }
+    
+    // Parte prima della sovrapposizione
+    if (intStart < newStart) {
+      result.push({
+        start_time: minutesToTime(intStart),
+        end_time: minutesToTime(newStart),
+        status: interval.status
+      });
+    }
+    
+    // Parte dopo la sovrapposizione
+    if (intEnd > newEnd) {
+      result.push({
+        start_time: minutesToTime(newEnd),
+        end_time: minutesToTime(intEnd),
+        status: interval.status
+      });
+    }
+  });
+  
+  // Aggiungi il nuovo intervallo
+  result.push(newInterval);
+  
+  // Ordina per orario di inizio
+  result.sort((a, b) => timeToMinutes(a.start_time) - timeToMinutes(b.start_time));
+  
+  return result;
+}
 
 export default function CaregiverCalendar() {
   const { user, profile } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [availability, setAvailability] = useState<Record<string, Array<{ id: string; status: string; notes?: string; start_time?: string; end_time?: string }>>>({});
+  const [availability, setAvailability] = useState<Record<string, AvailabilityEntry[]>>({});
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [modalStatus, setModalStatus] = useState<'disponibile' | 'non_disponibile'>('disponibile');
   const [modalNotes, setModalNotes] = useState('');
@@ -57,7 +101,6 @@ export default function CaregiverCalendar() {
     if (user) {
       fetchMyAvailability();
       fetchAllAvailability();
-      // Estendi automaticamente le disponibilità per i mesi futuri
       extendCaregiverAvailability(user.id, currentMonth);
     }
   }, [user, currentMonth]);
@@ -74,8 +117,7 @@ export default function CaregiverCalendar() {
       .lte('date', monthEnd);
 
     if (data) {
-      // Raggruppa tutte le entry per data
-      const map: Record<string, Array<{ id: string; status: string; notes?: string; start_time?: string; end_time?: string }>> = {};
+      const map: Record<string, AvailabilityEntry[]> = {};
       data.forEach((item) => {
         if (!map[item.date]) {
           map[item.date] = [];
@@ -111,26 +153,15 @@ export default function CaregiverCalendar() {
   async function handleDayClick(date: Date) {
     if (!isSameMonth(date, currentMonth)) return;
     setSelectedDate(date);
+    
     const dateStr = format(date, 'yyyy-MM-dd');
-    const existing = availability[dateStr];
+    const dayEntries = availability[dateStr] || [];
     
-    // Controlla se è una disponibilità precompilata
-    // Lun-Ven: 00:00-23:59, Sab: 00:00-12:00
-    const isPrecompiled = isPrecompiledAvailability(date, existing?.start_time, existing?.end_time);
-    
-    if (isPrecompiled && existing?.status === 'disponibile') {
-      // Se è precompilata e disponibile, permetti solo di inserire "non disponibilità"
-      setModalStatus('non_disponibile');
-      setModalNotes('');
-      setModalStartTime(existing.start_time || '00:00');
-      setModalEndTime(existing.end_time || '23:59');
-    } else {
-      // Altrimenti, comportamento normale
-      setModalStatus(existing?.status === 'non_disponibile' ? 'non_disponibile' : 'disponibile');
-      setModalNotes(existing?.notes || '');
-      setModalStartTime(existing?.start_time || '08:00');
-      setModalEndTime(existing?.end_time || '17:00');
-    }
+    // Reset modal
+    setModalStatus('non_disponibile');
+    setModalNotes('');
+    setModalStartTime('08:00');
+    setModalEndTime('17:00');
     
     setShowModal(true);
   }
@@ -139,108 +170,89 @@ export default function CaregiverCalendar() {
     if (!selectedDate || !user) return;
     const dateStr = format(selectedDate, 'yyyy-MM-dd');
     
-    // Controlla se è una disponibilità precompilata
-    const existing = availability[dateStr];
-    const isPrecompiled = isPrecompiledAvailability(selectedDate, existing?.start_time, existing?.end_time);
-
-    // Se è precompilata e la badante vuole inserire "non disponibilità"
-    if (isPrecompiled && modalStatus === 'non_disponibile') {
-      const { error } = await supabase.from('caregiver_availability').upsert({
+    const existingEntries = availability[dateStr] || [];
+    
+    // Se è una non disponibilità, calcola lo split automatico
+    if (modalStatus === 'non_disponibile' && existingEntries.length > 0) {
+      const newInterval = {
+        start_time: modalStartTime,
+        end_time: modalEndTime,
+        status: 'non_disponibile'
+      };
+      
+      const splitIntervals = calculateSplitIntervals(
+        existingEntries.map(e => ({
+          start_time: e.start_time || '00:00',
+          end_time: e.end_time || '23:59',
+          status: e.status
+        })),
+        newInterval
+      );
+      
+      // Elimina tutte le entry esistenti per questo giorno
+      await supabase
+        .from('caregiver_availability')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('date', dateStr);
+      
+      // Inserisci le nuove entry risultanti dallo split
+      const newEntries = splitIntervals.map(interval => ({
         user_id: user.id,
         date: dateStr,
-        status: 'non_disponibile',
-        start_time: existing?.start_time || '00:00',
-        end_time: existing?.end_time || '23:59',
+        status: interval.status,
+        start_time: interval.start_time,
+        end_time: interval.end_time,
+        notes: interval.status === 'non_disponibile' ? modalNotes : null,
+      }));
+      
+      const { error } = await supabase.from('caregiver_availability').insert(newEntries);
+      
+      if (!error) {
+        await sendNotification(
+          `${profile?.full_name} ha aggiornato la disponibilità per il ${format(selectedDate, 'dd/MM/yyyy')}`
+        );
+        setShowModal(false);
+        fetchMyAvailability();
+        fetchAllAvailability();
+      }
+    } else {
+      // Comportamento normale: aggiungi una nuova entry
+      const { error } = await supabase.from('caregiver_availability').insert({
+        user_id: user.id,
+        date: dateStr,
+        status: modalStatus,
+        start_time: modalStartTime,
+        end_time: modalEndTime,
         notes: modalNotes || null,
       });
 
       if (!error) {
         await sendNotification(
-          `${profile?.full_name} ha segnato come NON disponibile per il ${format(selectedDate, 'dd/MM/yyyy')}`
+          `${profile?.full_name} ha aggiornato la disponibilità per il ${format(selectedDate, 'dd/MM/yyyy')}`
         );
         setShowModal(false);
         fetchMyAvailability();
         fetchAllAvailability();
       }
-      return;
-    }
-
-    // Comportamento normale per altre modifiche
-    const timeInfo = `dalle ${modalStartTime} alle ${modalEndTime}`;
-
-    const { error } = await supabase.from('caregiver_availability').upsert({
-      user_id: user.id,
-      date: dateStr,
-      status: modalStatus,
-      start_time: modalStartTime,
-      end_time: modalEndTime,
-      notes: modalNotes || null,
-    });
-
-    if (!error) {
-      await sendNotification(
-        `${profile?.full_name} ha aggiornato la propria disponibilità per il ${format(selectedDate, 'dd/MM/yyyy')}: ${modalStatus === 'disponibile' ? `Disponibile ${timeInfo}` : 'Non disponibile'}`
-      );
-      setShowModal(false);
-      fetchMyAvailability();
-      fetchAllAvailability();
     }
   }
 
-  async function removeAvailability() {
-    if (!selectedDate || !user) return;
+  async function removeEntry(entryId: string) {
+    if (!user) return;
     
-    const dateStr = format(selectedDate, 'yyyy-MM-dd');
-    const existing = availability[dateStr];
-    const isPrecompiled = isPrecompiledAvailability(selectedDate, existing?.start_time, existing?.end_time);
+    const { error } = await supabase
+      .from('caregiver_availability')
+      .delete()
+      .eq('id', entryId)
+      .eq('user_id', user.id);
     
-    // Se è una "non disponibilità" su un giorno precompilato, ripristina la disponibilità automatica
-    if (existing?.status === 'non_disponibile' && isPrecompiled) {
-      if (!confirm('Ripristinare la disponibilità automatica per questo giorno?')) return;
-      
-      // Determina gli orari corretti in base al giorno della settimana
-      const dayOfWeek = selectedDate.getDay();
-      const isSaturday = dayOfWeek === 6;
-      const endTime = isSaturday ? '12:00' : '23:59';
-      
-      const { error } = await supabase.from('caregiver_availability').upsert({
-        user_id: user.id,
-        date: dateStr,
-        status: 'disponibile',
-        start_time: '00:00',
-        end_time: endTime,
-        notes: null,
-      });
-      
-      if (!error) {
-        await sendNotification(
-          `${profile?.full_name} ha ripristinato la disponibilità per il ${format(selectedDate, 'dd/MM/yyyy')}`
-        );
-        setShowModal(false);
-        fetchMyAvailability();
-        fetchAllAvailability();
-      }
-      return;
-    }
-    
-    // Altrimenti, rimuovi completamente (solo per disponibilità non precompilate)
-    if (!isPrecompiled) {
-      if (!confirm(`Sei sicuro di voler rimuovere la disponibilità per il ${format(selectedDate, 'dd/MM/yyyy')}?`)) return;
-
-      const { error } = await supabase
-        .from('caregiver_availability')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('date', dateStr);
-
-      if (!error) {
-        await sendNotification(
-          `${profile?.full_name} ha RIMOSSO la propria disponibilità per il ${format(selectedDate, 'dd/MM/yyyy')}`
-        );
-        setShowModal(false);
-        fetchMyAvailability();
-        fetchAllAvailability();
-      }
+    if (!error) {
+      await sendNotification(
+        `${profile?.full_name} ha rimosso una fascia oraria`
+      );
+      fetchMyAvailability();
+      fetchAllAvailability();
     }
   }
 
@@ -248,8 +260,8 @@ export default function CaregiverCalendar() {
     const { data: profiles } = await supabase.from('profiles').select('id');
     if (profiles) {
       const notifications = profiles
-        .filter((p) => p.id !== user?.id)
-        .map((p) => ({
+        .filter((p: any) => p.id !== user?.id)
+        .map((p: any) => ({
           user_id: p.id,
           message,
           read: false,
@@ -269,7 +281,6 @@ export default function CaregiverCalendar() {
 
   const weekDays = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
 
-  // Preset orari rapidi
   const timePresets = [
     { label: 'Mattina (8-13)', start: '08:00', end: '13:00' },
     { label: 'Pomeriggio (13-18)', start: '13:00', end: '18:00' },
@@ -277,15 +288,6 @@ export default function CaregiverCalendar() {
     { label: 'Intera giornata (8-20)', start: '08:00', end: '20:00' },
     { label: 'Notte (20-8)', start: '20:00', end: '08:00' },
   ];
-
-  // Function to calculate coverage percentage based on hours
-  function getCoveragePercentage(startTime?: string, endTime?: string): number {
-    if (!startTime || !endTime) return 0;
-    const [startH, startM] = startTime.split(':').map(Number);
-    const [endH, endM] = endTime.split(':').map(Number);
-    const hours = (endH + endM / 60) - (startH + startM / 60);
-    return Math.min((hours / 24) * 100, 100);
-  }
 
   return (
     <div className="bg-gray-900 rounded-2xl shadow-lg p-6 border border-gray-800">
@@ -312,7 +314,6 @@ export default function CaregiverCalendar() {
         </div>
       </div>
 
-      {/* Calendar Grid */}
       <div className="grid grid-cols-7 gap-1 mb-4">
         {weekDays.map((day) => (
           <div key={day} className="text-center text-sm font-medium text-gray-400 py-2">
@@ -324,14 +325,10 @@ export default function CaregiverCalendar() {
       <div className="grid grid-cols-7 gap-1">
         {days.map((day, idx) => {
           const dateStr = format(day, 'yyyy-MM-dd');
-          const myAvail = availability[dateStr];
           const dayEntries = allCaregiverAvailability.filter(e => e.date === dateStr);
           const isCurrentMonth = isSameMonth(day, currentMonth);
           const dayIsToday = isToday(day);
           const dayIsWeekend = isWeekend(day);
-          
-          // Calculate coverage for my availability
-          const coverage = myAvail ? getCoveragePercentage(myAvail.start_time, myAvail.end_time) : 0;
 
           return (
             <button
@@ -345,28 +342,13 @@ export default function CaregiverCalendar() {
                 ${dayIsWeekend && isCurrentMonth ? 'bg-orange-900/20' : 'bg-gray-800'}
               `}
             >
-              {/* Background fill based on coverage */}
-              {myAvail && coverage > 0 && (
-                <div 
-                  className={`absolute bottom-0 left-0 right-0 opacity-80 transition-all duration-300 ${
-                    myAvail.status === 'disponibile' 
-                      ? 'bg-gradient-to-t from-green-600 to-green-500' 
-                      : 'bg-gradient-to-t from-red-600 to-red-500'
-                  }`}
-                  style={{ height: `${coverage}%` }}
-                />
-              )}
-              
-              {/* Content */}
               <div className="relative z-10">
                 <span className={`font-medium ${dayIsToday ? 'text-indigo-300' : 'text-gray-200'}`}>
                   {format(day, 'd')}
                 </span>
                 
-                {/* Mostra tutte le registrazioni del giorno */}
                 {dayEntries.length > 0 && (
                   <div className="mt-1 space-y-1">
-                    {/* Avatar grandi */}
                     <div className="flex items-center gap-1 flex-wrap">
                       {dayEntries.slice(0, 3).map((entry, i) => (
                         <span
@@ -381,7 +363,6 @@ export default function CaregiverCalendar() {
                         <span className="text-[10px] text-gray-400">+{dayEntries.length - 3}</span>
                       )}
                     </div>
-                    {/* Orari */}
                     <div className="space-y-0.5">
                       {dayEntries.slice(0, 2).map((entry, i) => (
                         <div key={i} className={`text-[9px] font-medium leading-tight truncate ${
@@ -402,7 +383,6 @@ export default function CaregiverCalendar() {
         })}
       </div>
 
-      {/* Legend */}
       <div className="mt-4 flex items-center gap-4 text-sm text-gray-300">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-gradient-to-t from-green-600 to-green-500 rounded"></div>
@@ -412,16 +392,11 @@ export default function CaregiverCalendar() {
           <div className="w-4 h-4 bg-gradient-to-t from-red-600 to-red-500 rounded"></div>
           <span>Non disponibile</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-orange-900/20 border border-gray-700 rounded"></div>
-          <span>Weekend</span>
-        </div>
         <div className="flex items-center gap-2 ml-auto">
           <span className="text-xs text-gray-400">📏 Riempimento = ore di copertura</span>
         </div>
       </div>
 
-      {/* All caregivers summary */}
       {allCaregiverAvailability.length > 0 && (
         <div className="mt-6 border-t border-gray-800 pt-4">
           <h3 className="font-semibold text-white mb-2">Riepilogo disponibilità badanti</h3>
@@ -441,7 +416,6 @@ export default function CaregiverCalendar() {
         </div>
       )}
 
-      {/* Modal */}
       {showModal && selectedDate && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-gray-900 rounded-2xl p-6 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto border border-gray-700">
@@ -449,150 +423,109 @@ export default function CaregiverCalendar() {
               {format(selectedDate, 'EEEE dd MMMM yyyy', { locale: it })}
             </h3>
 
-            {/* Banner: disponibilità esistente */}
-            {selectedDate && availability[format(selectedDate, 'yyyy-MM-dd')] && (() => {
-              const existing = availability[format(selectedDate, 'yyyy-MM-dd')];
-              const isPrecompiled = isPrecompiledAvailability(selectedDate, existing?.start_time, existing?.end_time);
-              
-              if (isPrecompiled && existing?.status === 'disponibile') {
-                // Determina il messaggio in base al giorno della settimana
-                const dayOfWeek = selectedDate.getDay();
-                const isSaturday = dayOfWeek === 6;
-                const timeRange = isSaturday ? '00:00-12:00' : '00:00-24:00';
-                const dayType = isSaturday ? 'Sabato' : 'Lun-Ven';
-                
-                return (
-                  <div className="bg-blue-900/30 border border-blue-700 rounded-lg p-3 mb-4 flex items-start gap-2">
-                    <span className="text-lg">🔒</span>
-                    <div className="text-sm text-blue-300">
-                      <p className="font-medium">Disponibilità automatica ({dayType} {timeRange})</p>
-                      <p className="text-blue-400 mt-0.5">
-                        Puoi solo inserire una "non disponibilità" per questo giorno.
-                      </p>
+            {/* Mostra fasce orarie esistenti */}
+            {selectedDate && availability[format(selectedDate, 'yyyy-MM-dd')]?.length > 0 && (
+              <div className="bg-gray-800 rounded-lg p-4 mb-4">
+                <h4 className="text-sm font-medium text-gray-300 mb-2">Fasce orarie esistenti:</h4>
+                <div className="space-y-2">
+                  {availability[format(selectedDate, 'yyyy-MM-dd')].map((entry) => (
+                    <div key={entry.id} className="flex items-center justify-between bg-gray-700 rounded p-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-200">
+                          {entry.start_time} - {entry.end_time}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs px-2 py-1 rounded ${
+                          entry.status === 'disponibile' 
+                            ? 'bg-green-600 text-white' 
+                            : 'bg-red-600 text-white'
+                        }`}>
+                          {entry.status === 'disponibile' ? '✓' : '✗'}
+                        </span>
+                        <button
+                          onClick={() => removeEntry(entry.id)}
+                          className="text-red-400 hover:text-red-300 text-xs"
+                          title="Rimuovi questa fascia"
+                        >
+                          🗑️
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                );
-              }
-              
-              return (
-                <div className="bg-amber-900/30 border border-amber-700 rounded-lg p-3 mb-4 flex items-start gap-2">
-                  <span className="text-lg">ℹ️</span>
-                  <div className="text-sm text-amber-300">
-                    <p className="font-medium">Hai già inserito una disponibilità per questo giorno</p>
-                    <p className="text-amber-400 mt-0.5">
-                      Puoi modificarla qui sotto oppure rimuoverla completamente con il pulsante in fondo.
-                    </p>
-                  </div>
+                  ))}
                 </div>
-              );
-            })()}
+              </div>
+            )}
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Stato</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Aggiungi nuova fascia</label>
                 <div className="flex gap-3">
-                  {(() => {
-                    const existing = selectedDate ? availability[format(selectedDate, 'yyyy-MM-dd')] : null;
-                    const isPrecompiled = selectedDate ? isPrecompiledAvailability(selectedDate, existing?.start_time, existing?.end_time) : false;
-                    
-                    return (
-                      <>
-                        <button
-                          onClick={() => setModalStatus('disponibile')}
-                          disabled={isPrecompiled && existing?.status === 'disponibile'}
-                          className={`flex-1 py-3 rounded-lg font-medium transition ${
-                            modalStatus === 'disponibile'
-                              ? 'bg-green-600 text-white'
-                              : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                          } ${isPrecompiled && existing?.status === 'disponibile' ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        >
-                          ✓ Disponibile
-                        </button>
-                        <button
-                          onClick={() => setModalStatus('non_disponibile')}
-                          className={`flex-1 py-3 rounded-lg font-medium transition ${
-                            modalStatus === 'non_disponibile'
-                              ? 'bg-red-600 text-white'
-                              : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                          }`}
-                        >
-                          ✗ Non disponibile
-                        </button>
-                      </>
-                    );
-                  })()}
+                  <button
+                    onClick={() => setModalStatus('disponibile')}
+                    className={`flex-1 py-3 rounded-lg font-medium transition ${
+                      modalStatus === 'disponibile'
+                        ? 'bg-green-600 text-white'
+                        : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                    }`}
+                  >
+                    ✓ Disponibile
+                  </button>
+                  <button
+                    onClick={() => setModalStatus('non_disponibile')}
+                    className={`flex-1 py-3 rounded-lg font-medium transition ${
+                      modalStatus === 'non_disponibile'
+                        ? 'bg-red-600 text-white'
+                        : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                    }`}
+                  >
+                    ✗ Non disponibile
+                  </button>
                 </div>
               </div>
 
-              {/* Orari - visibili solo se non è una disponibilità precompilata */}
-              {(() => {
-                const existing = selectedDate ? availability[format(selectedDate, 'yyyy-MM-dd')] : null;
-                const isPrecompiled = selectedDate ? isPrecompiledAvailability(selectedDate, existing?.start_time, existing?.end_time) : false;
-                
-                if (isPrecompiled) {
-                  return null; // Non mostrare la sezione orari
-                }
-                
-                return (
-              <>
-                {/* Preset orari rapidi */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Orari rapidi</label>
+                <div className="flex flex-wrap gap-2">
+                  {timePresets.map((preset) => (
+                    <button
+                      key={preset.label}
+                      onClick={() => {
+                        setModalStartTime(preset.start);
+                        setModalEndTime(preset.end);
+                      }}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition border ${
+                        modalStartTime === preset.start && modalEndTime === preset.end
+                          ? 'bg-indigo-600 text-white border-indigo-600'
+                          : 'bg-gray-800 text-gray-300 border-gray-600 hover:border-indigo-500 hover:bg-gray-700'
+                      }`}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Orari rapidi</label>
-                  <div className="flex flex-wrap gap-2">
-                    {timePresets.map((preset) => (
-                      <button
-                        key={preset.label}
-                        onClick={() => {
-                          setModalStartTime(preset.start);
-                          setModalEndTime(preset.end);
-                        }}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition border ${
-                          modalStartTime === preset.start && modalEndTime === preset.end
-                            ? 'bg-indigo-600 text-white border-indigo-600'
-                            : 'bg-gray-800 text-gray-300 border-gray-600 hover:border-indigo-500 hover:bg-gray-700'
-                        }`}
-                      >
-                        {preset.label}
-                      </button>
-                    ))}
-                  </div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">🕐 Inizio</label>
+                  <input
+                    type="time"
+                    value={modalStartTime}
+                    onChange={(e) => setModalStartTime(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-600 bg-gray-800 text-white rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-lg"
+                  />
                 </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">
-                      🕐 Inizio
-                    </label>
-                    <input
-                      type="time"
-                      value={modalStartTime}
-                      onChange={(e) => setModalStartTime(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-600 bg-gray-800 text-white rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-lg"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">
-                      🕐 Fine
-                    </label>
-                    <input
-                      type="time"
-                      value={modalEndTime}
-                      onChange={(e) => setModalEndTime(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-600 bg-gray-800 text-white rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-lg"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">🕐 Fine</label>
+                  <input
+                    type="time"
+                    value={modalEndTime}
+                    onChange={(e) => setModalEndTime(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-600 bg-gray-800 text-white rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-lg"
+                  />
                 </div>
-
-                <div className={`border rounded-lg p-3 text-sm ${
-                  modalStatus === 'disponibile' 
-                    ? 'bg-green-900/30 border-green-700 text-green-300'
-                    : 'bg-red-900/30 border-red-700 text-red-300'
-                }`}>
-                  📅 {modalStatus === 'disponibile' ? 'Sarai disponibile' : 'Non sarai disponibile'} dalle <strong>{modalStartTime}</strong> alle <strong>{modalEndTime}</strong>
-                </div>
-              </>
-                );
-              })()}
+              </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">Note (opzionale)</label>
@@ -617,44 +550,9 @@ export default function CaregiverCalendar() {
                     onClick={saveAvailability}
                     className="flex-1 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition"
                   >
-                    💾 Salva
+                    💾 Aggiungi fascia
                   </button>
                 </div>
-                
-                {/* Pulsante Rimuovi/Ripristina - visibile solo se c'è già una disponibilità */}
-                {selectedDate && availability[format(selectedDate, 'yyyy-MM-dd')] && (() => {
-                  const existing = availability[format(selectedDate, 'yyyy-MM-dd')];
-                  const isPrecompiled = isPrecompiledAvailability(selectedDate, existing?.start_time, existing?.end_time);
-                  const isNonAvailable = existing?.status === 'non_disponibile';
-                  
-                  // Se è una "non disponibilità" su un giorno precompilato, mostra "Ripristina"
-                  if (isPrecompiled && isNonAvailable) {
-                    return (
-                      <button
-                        onClick={removeAvailability}
-                        className="w-full py-3 bg-blue-900/30 border-2 border-blue-700 text-blue-300 rounded-lg font-medium hover:bg-blue-900/50 transition flex items-center justify-center gap-2"
-                      >
-                        <span>🔄</span>
-                        <span>Ripristina disponibilità automatica</span>
-                      </button>
-                    );
-                  }
-                  
-                  // Altrimenti, mostra "Rimuovi" solo se non è precompilata
-                  if (!isPrecompiled) {
-                    return (
-                      <button
-                        onClick={removeAvailability}
-                        className="w-full py-3 bg-red-900/30 border-2 border-red-700 text-red-300 rounded-lg font-medium hover:bg-red-900/50 transition flex items-center justify-center gap-2"
-                      >
-                        <span>🗑️</span>
-                        <span>Rimuovi questa disponibilità</span>
-                      </button>
-                    );
-                  }
-                  
-                  return null;
-                })()}
               </div>
             </div>
           </div>
