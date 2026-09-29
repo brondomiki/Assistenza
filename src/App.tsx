@@ -15,6 +15,7 @@ function AppContent() {
   const { user, profile, loading, signOut } = useAuth();
   const [page, setPage] = useState<Page>('dashboard');
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   if (loading) {
     return (
@@ -41,50 +42,12 @@ function AppContent() {
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="text-2xl">🏠</span>
-            <h1 className="text-xl font-bold text-white hidden sm:block">Assistenza Anziani</h1>
+            <h1 className="text-xl font-bold text-white">Assistenza Anziani</h1>
           </div>
 
-          {/* Navigation */}
-          <nav className="flex items-center gap-1 sm:gap-2">
-            <button
-              onClick={() => setPage('dashboard')}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition ${
-                page === 'dashboard' ? 'bg-indigo-600 text-white' : 'text-gray-300 hover:bg-gray-800'
-              }`}
-            >
-              <span className="hidden sm:inline">📊 </span>Dashboard
-            </button>
-            <button
-              onClick={() => setPage('caregiver')}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition ${
-                page === 'caregiver' ? 'bg-green-600 text-white' : 'text-gray-300 hover:bg-gray-800'
-              }`}
-            >
-              <span className="hidden sm:inline">👩‍⚕️ </span>Badanti
-            </button>
-            <button
-              onClick={() => setPage('family')}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition ${
-                page === 'family' ? 'bg-purple-600 text-white' : 'text-gray-300 hover:bg-gray-800'
-              }`}
-            >
-              <span className="hidden sm:inline">👨‍👩‍👧 </span>Familiari
-            </button>
-            {profile?.role === 'superuser' && (
-              <button
-                onClick={() => setPage('admin')}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition ${
-                  page === 'admin' ? 'bg-orange-600 text-white' : 'text-gray-300 hover:bg-gray-800'
-                }`}
-              >
-                <span className="hidden sm:inline">⚙️ </span>Admin
-              </button>
-            )}
-          </nav>
-
-          {/* Right side */}
           <div className="flex items-center gap-2 sm:gap-3">
             <Notifications />
+            
             {/* Mobile: avatar + nome compatto */}
             <div className="flex sm:hidden items-center gap-2">
               <button
@@ -100,6 +63,7 @@ function AppContent() {
                 <p className="text-xs font-medium text-white truncate max-w-[80px]">{profile?.full_name}</p>
               </div>
             </div>
+            
             {/* Desktop: avatar + nome + ruolo completo */}
             <div className="hidden sm:flex items-center gap-2">
               <div className="text-right">
@@ -116,14 +80,74 @@ function AppContent() {
                 </span>
               </button>
             </div>
+
+            {/* Hamburger Menu Button */}
+            <button
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
+              className="p-2 rounded-lg text-gray-300 hover:bg-gray-800 transition"
+              aria-label="Menu"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+
             <button
               onClick={signOut}
-              className="px-2 sm:px-3 py-2 text-sm text-red-400 hover:bg-red-900/30 rounded-lg transition font-medium"
+              className="hidden sm:block px-3 py-2 text-sm text-red-400 hover:bg-red-900/30 rounded-lg transition font-medium"
             >
               Esci
             </button>
           </div>
         </div>
+
+        {/* Mobile Menu Dropdown */}
+        {showMobileMenu && (
+          <div className="border-t border-gray-800 bg-gray-900">
+            <nav className="max-w-7xl mx-auto px-4 py-3 flex flex-col gap-2">
+              <button
+                onClick={() => { setPage('dashboard'); setShowMobileMenu(false); }}
+                className={`px-4 py-3 rounded-lg text-left font-medium transition ${
+                  page === 'dashboard' ? 'bg-indigo-600 text-white' : 'text-gray-300 hover:bg-gray-800'
+                }`}
+              >
+                📊 Dashboard
+              </button>
+              <button
+                onClick={() => { setPage('caregiver'); setShowMobileMenu(false); }}
+                className={`px-4 py-3 rounded-lg text-left font-medium transition ${
+                  page === 'caregiver' ? 'bg-green-600 text-white' : 'text-gray-300 hover:bg-gray-800'
+                }`}
+              >
+                👩‍⚕️ Badanti
+              </button>
+              <button
+                onClick={() => { setPage('family'); setShowMobileMenu(false); }}
+                className={`px-4 py-3 rounded-lg text-left font-medium transition ${
+                  page === 'family' ? 'bg-purple-600 text-white' : 'text-gray-300 hover:bg-gray-800'
+                }`}
+              >
+                👨‍👩‍👧 Familiari
+              </button>
+              {profile?.role === 'superuser' && (
+                <button
+                  onClick={() => { setPage('admin'); setShowMobileMenu(false); }}
+                  className={`px-4 py-3 rounded-lg text-left font-medium transition ${
+                    page === 'admin' ? 'bg-orange-600 text-white' : 'text-gray-300 hover:bg-gray-800'
+                  }`}
+                >
+                  ⚙️ Admin
+                </button>
+              )}
+              <button
+                onClick={signOut}
+                className="sm:hidden px-4 py-3 rounded-lg text-left font-medium text-red-400 hover:bg-red-900/30 transition"
+              >
+                🚪 Esci
+              </button>
+            </nav>
+          </div>
+        )}
       </header>
 
       {/* Main Content */}
