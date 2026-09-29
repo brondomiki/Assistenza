@@ -97,12 +97,14 @@ export default function CaregiverCalendar() {
   const [modalEndTime, setModalEndTime] = useState('17:00');
   const [showModal, setShowModal] = useState(false);
   const [allCaregiverAvailability, setAllCaregiverAvailability] = useState<any[]>([]);
+  const [allFamilyAvailability, setAllFamilyAvailability] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (user) {
       fetchMyAvailability();
       fetchAllAvailability();
+      fetchAllFamilyAvailability();
       extendCaregiverAvailability(user.id, currentMonth);
     }
   }, [user, currentMonth]);
@@ -149,6 +151,21 @@ export default function CaregiverCalendar() {
 
     if (data) {
       setAllCaregiverAvailability(data);
+    }
+  }
+
+  async function fetchAllFamilyAvailability() {
+    const monthStart = format(startOfMonth(currentMonth), 'yyyy-MM-dd');
+    const monthEnd = format(endOfMonth(currentMonth), 'yyyy-MM-dd');
+
+    const { data } = await supabase
+      .from('family_availability')
+      .select('*, profiles(full_name, avatar)')
+      .gte('date', monthStart)
+      .lte('date', monthEnd);
+
+    if (data) {
+      setAllFamilyAvailability(data);
     }
   }
 
@@ -346,6 +363,7 @@ export default function CaregiverCalendar() {
         {days.map((day, idx) => {
           const dateStr = format(day, 'yyyy-MM-dd');
           const dayEntries = allCaregiverAvailability.filter(e => e.date === dateStr);
+          const familyDayEntries = allFamilyAvailability.filter(e => e.date === dateStr);
           const isCurrentMonth = isSameMonth(day, currentMonth);
           const dayIsToday = isToday(day);
           const dayIsWeekend = isWeekend(day);
@@ -367,6 +385,7 @@ export default function CaregiverCalendar() {
                   {format(day, 'd')}
                 </span>
                 
+                {/* Disponibilità Badanti (gruppo principale) */}
                 {dayEntries.length > 0 && (
                   <div className="mt-0.5 sm:mt-1 space-y-0.5 sm:space-y-1">
                     <div className="flex items-center gap-0.5 sm:gap-1 flex-wrap">
@@ -397,6 +416,35 @@ export default function CaregiverCalendar() {
                     </div>
                   </div>
                 )}
+
+                {/* Disponibilità Familiari (colore più tenue) */}
+                {familyDayEntries.length > 0 && (
+                  <div className="mt-0.5 sm:mt-1 space-y-0.5 sm:space-y-1 opacity-50">
+                    <div className="flex items-center gap-0.5 sm:gap-1 flex-wrap">
+                      {familyDayEntries.slice(0, 2).map((entry, i) => (
+                        <span
+                          key={i}
+                          className="text-xs sm:text-sm"
+                          title={`Familiare: ${(entry.profiles as any)?.full_name}`}
+                        >
+                          {(entry.profiles as any)?.avatar || '👤'}
+                        </span>
+                      ))}
+                      {familyDayEntries.length > 2 && (
+                        <span className="text-[8px] text-gray-500">+{familyDayEntries.length - 2}</span>
+                      )}
+                    </div>
+                    <div className="space-y-0">
+                      {familyDayEntries.slice(0, 1).map((entry, i) => (
+                        <div key={i} className={`text-[7px] sm:text-[8px] font-medium leading-tight truncate ${
+                          entry.status === 'disponibile' ? 'text-purple-400' : 'text-red-400'
+                        }`}>
+                          {entry.start_time && entry.end_time ? `${entry.start_time}-${entry.end_time}` : ''}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </button>
           );
@@ -406,11 +454,15 @@ export default function CaregiverCalendar() {
       <div className="mt-4 flex items-center gap-4 text-sm text-gray-300">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-gradient-to-t from-green-600 to-green-500 rounded"></div>
-          <span>Disponibile</span>
+          <span>Badante disponibile</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-gradient-to-t from-red-600 to-red-500 rounded"></div>
           <span>Non disponibile</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 bg-gradient-to-t from-purple-600 to-purple-500 rounded opacity-50"></div>
+          <span className="opacity-70">Familiare</span>
         </div>
         <div className="flex items-center gap-2 ml-auto">
           <span className="text-xs text-gray-400">📏 Riempimento = ore di copertura</span>

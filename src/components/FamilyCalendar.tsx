@@ -49,12 +49,14 @@ export default function FamilyCalendar() {
   const [modalEndTime, setModalEndTime] = useState('18:00');
   const [showModal, setShowModal] = useState(false);
   const [allFamilyAvailability, setAllFamilyAvailability] = useState<any[]>([]);
+  const [allCaregiverAvailability, setAllCaregiverAvailability] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (user) {
       fetchMyAvailability();
       fetchAllAvailability();
+      fetchAllCaregiverAvailability();
     }
   }, [user, currentMonth]);
 
@@ -96,6 +98,21 @@ export default function FamilyCalendar() {
 
     if (data) {
       setAllFamilyAvailability(data);
+    }
+  }
+
+  async function fetchAllCaregiverAvailability() {
+    const monthStart = format(startOfMonth(currentMonth), 'yyyy-MM-dd');
+    const monthEnd = format(endOfMonth(currentMonth), 'yyyy-MM-dd');
+
+    const { data } = await supabase
+      .from('caregiver_availability')
+      .select('*, profiles(full_name, avatar)')
+      .gte('date', monthStart)
+      .lte('date', monthEnd);
+
+    if (data) {
+      setAllCaregiverAvailability(data);
     }
   }
 
@@ -261,6 +278,7 @@ export default function FamilyCalendar() {
           const dateStr = format(day, 'yyyy-MM-dd');
           const myAvail = availability[dateStr];
           const dayEntries = allFamilyAvailability.filter(e => e.date === dateStr);
+          const caregiverDayEntries = allCaregiverAvailability.filter(e => e.date === dateStr);
           const isCurrentMonth = isSameMonth(day, currentMonth);
           const dayIsToday = isToday(day);
           const dayIsHoliday = isItalianHoliday(day);
@@ -302,7 +320,7 @@ export default function FamilyCalendar() {
                   <span className="absolute top-0.5 right-0.5 text-xs">🎉</span>
                 )}
                 
-                {/* Mostra tutte le registrazioni del giorno */}
+                {/* Disponibilità Familiari (gruppo principale) */}
                 {dayEntries.length > 0 && (
                   <div className="mt-0.5 sm:mt-1 space-y-0.5 sm:space-y-1">
                     {/* Avatar grandi */}
@@ -335,6 +353,35 @@ export default function FamilyCalendar() {
                     </div>
                   </div>
                 )}
+
+                {/* Disponibilità Badanti (colore più tenue) */}
+                {caregiverDayEntries.length > 0 && (
+                  <div className="mt-0.5 sm:mt-1 space-y-0.5 sm:space-y-1 opacity-50">
+                    <div className="flex items-center gap-0.5 sm:gap-1 flex-wrap">
+                      {caregiverDayEntries.slice(0, 2).map((entry, i) => (
+                        <span
+                          key={i}
+                          className="text-xs sm:text-sm"
+                          title={`Badante: ${(entry.profiles as any)?.full_name}`}
+                        >
+                          {(entry.profiles as any)?.avatar || '👤'}
+                        </span>
+                      ))}
+                      {caregiverDayEntries.length > 2 && (
+                        <span className="text-[8px] text-gray-500">+{caregiverDayEntries.length - 2}</span>
+                      )}
+                    </div>
+                    <div className="space-y-0">
+                      {caregiverDayEntries.slice(0, 1).map((entry, i) => (
+                        <div key={i} className={`text-[7px] sm:text-[8px] font-medium leading-tight truncate ${
+                          entry.status === 'disponibile' ? 'text-green-400' : 'text-red-400'
+                        }`}>
+                          {entry.start_time && entry.end_time ? `${entry.start_time}-${entry.end_time}` : ''}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </button>
           );
@@ -345,11 +392,15 @@ export default function FamilyCalendar() {
       <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-gray-300">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-gradient-to-t from-purple-600 to-purple-500 rounded"></div>
-          <span>Disponibile</span>
+          <span>Familiare disponibile</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-gradient-to-t from-red-600 to-red-500 rounded"></div>
           <span>Non disponibile</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 bg-gradient-to-t from-green-600 to-green-500 rounded opacity-50"></div>
+          <span className="opacity-70">Badante</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-yellow-900/20 border border-gray-700 rounded"></div>
