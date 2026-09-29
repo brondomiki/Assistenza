@@ -8,8 +8,6 @@ import Notifications from './components/Notifications';
 import AdminPanel from './components/AdminPanel';
 import Dashboard from './components/Dashboard';
 import ProfileModal from './components/ProfileModal';
-import PushNotificationButton from './components/PushNotificationButton';
-import ToastNotification from './components/ToastNotification';
 
 type Page = 'login' | 'register' | 'dashboard' | 'caregiver' | 'family' | 'admin';
 
@@ -49,7 +47,6 @@ function AppContent() {
 
           <div className="flex items-center gap-2 sm:gap-3">
             <Notifications />
-            <PushNotificationButton />
             
             {/* Mobile: avatar + nome compatto */}
             <div className="flex sm:hidden items-center gap-2">
