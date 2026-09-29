@@ -287,36 +287,6 @@ export default function FamilyCalendar() {
           // Calculate coverage for my availability
           const coverage = myAvail ? getCoveragePercentage(myAvail.start_time, myAvail.end_time) : 0;
 
-          // Calcola fasce orarie scoperte
-          const allEntries = [...dayEntries, ...caregiverDayEntries].filter(e => e.status === 'disponibile' && e.start_time && e.end_time);
-          
-          let uncoveredHours = 0;
-          if (allEntries.length > 0) {
-            // Converti orari in minuti
-            const intervals = allEntries.map(e => {
-              const [startH, startM] = e.start_time!.split(':').map(Number);
-              const [endH, endM] = e.end_time!.split(':').map(Number);
-              return { start: startH * 60 + startM, end: endH * 60 + endM };
-            });
-            
-            // Ordina e unisci intervalli sovrapposti
-            intervals.sort((a, b) => a.start - b.start);
-            const merged: Array<{ start: number; end: number }> = [];
-            intervals.forEach(interval => {
-              if (merged.length === 0 || merged[merged.length - 1].end < interval.start) {
-                merged.push(interval);
-              } else {
-                merged[merged.length - 1].end = Math.max(merged[merged.length - 1].end, interval.end);
-              }
-            });
-            
-            // Calcola ore coperte
-            const coveredMinutes = merged.reduce((sum, interval) => sum + (interval.end - interval.start), 0);
-            uncoveredHours = Math.round(((24 * 60 - coveredMinutes) / 60) * 10) / 10;
-          } else {
-            uncoveredHours = 24;
-          }
-
           return (
             <button
               key={idx}
@@ -343,16 +313,9 @@ export default function FamilyCalendar() {
               
               {/* Content */}
               <div className="relative z-10">
-                <div className="flex items-center justify-between">
-                  <span className={`font-medium ${dayIsToday ? 'text-purple-300' : 'text-gray-200'}`}>
-                    {format(day, 'd')}
-                  </span>
-                  {uncoveredHours > 0 && (
-                    <span className="text-[7px] sm:text-[8px] text-orange-400 font-bold">
-                      ⚠{uncoveredHours}h
-                    </span>
-                  )}
-                </div>
+                <span className={`font-medium ${dayIsToday ? 'text-purple-300' : 'text-gray-200'}`}>
+                  {format(day, 'd')}
+                </span>
                 {dayIsHoliday && isCurrentMonth && (
                   <span className="absolute top-0.5 right-0.5 text-xs">🎉</span>
                 )}
@@ -473,6 +436,137 @@ export default function FamilyCalendar() {
                 </div>
               </div>
             )}
+
+            {/* Analisi copertura oraria */}
+            {selectedDate && (() => {
+              const dateStr = format(selectedDate, 'yyyy-MM-dd');
+              const dayEntries = allFamilyAvailability.filter(e => e.date === dateStr);
+              const caregiverDayEntries = allCaregiverAvailability.filter(e => e.date === dateStr);
+              const allAvailable = [...dayEntries, ...caregiverDayEntries].filter(e => e.status === 'disponibile' && e.start_time && e.end_time);
+              
+              if (allAvailable.length === 0) {
+                return (
+                  <div className="bg-red-900/30 border border-red-700 rounded-lg p-4 mb-4">
+                    <p className="text-sm text-red-300 font-medium">⚠️ Nessuna copertura</p>
+                    <p className="text-xs text-red-400 mt-1">24 ore scoperte - nessuna disponibilità registrata</p>
+                  </div>
+                );
+              }
+              
+              // Converti orari in minuti
+              const intervals = allAvailable.map(e => {
+                const [startH, startM] = e.start_time!.split(':').map(Number);
+                const [endH, endM] = e.end_time!.split(':').map(Number);
+                return { start: startH * 60 + startM, end: endH * 60 + endM };
+              });
+              
+              // Ordina e unisci intervalli sovrapposti
+              intervals.sort((a, b) => a.start - b.start);
+              const merged: Array<{ start: number; end: number }> = [];
+              intervals.forEach(interval => {
+                if (merged.length === 0 || merged[merged.length - 1].end < interval.start) {
+                  merged.push(interval);
+                } else {
+                  merged[merged.length - 1].end = Math.max(merged[merged.length - 1].end, interval.end);
+                }
+              });
+              
+              // Calcola ore coperte e scoperte
+              const coveredMinutes = merged.reduce((sum, interval) => sum + (interval.end - interval.start), 0);
+              const uncoveredMinutes = (24 * 60) - coveredMinutes;
+              const coveredHours = Math.floor(coveredMinutes / 60);
+              const coveredMins = coveredMinutes % 60;
+              const uncoveredHours = Math.floor(uncoveredMinutes / 60);
+              const uncoveredMins = uncoveredMinutes % 60;
+              const coveragePercentage = Math.round((coveredMinutes / (24 * 60)) * 100);
+              
+              // Calcola fasce scoperte
+              const uncoveredIntervals: Array<{ start: number; end: number }> = [];
+              let lastEnd = 0;
+              merged.forEach(interval => {
+                if (interval.start > lastEnd) {
+                  uncoveredIntervals.push({ start: lastEnd, end: interval.start });
+                }
+                lastEnd = interval.end;
+              });
+              if (lastEnd < 24 * 60) {
+                uncoveredIntervals.push({ start: lastEnd, end: 24 * 60 });
+              }
+              
+              return (
+                <div className="bg-gray-800 rounded-lg p-4 mb-4">
+                  <h4 className="text-sm font-medium text-white mb-3">📊 Analisi copertura</h4>
+                  
+                  <div className="grid grid-cols-2 gap-4 mb-3">
+                    <div>
+                      <p className="text-xs text-gray-400">Ore coperte</p>
+                      <p className="text-xl font-bold text-green-400">
+                        {coveredHours}h {coveredMins > 0 ? `${coveredMins}m` : ''}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-400">Ore scoperte</p>
+                      <p className={`text-xl font-bold ${uncoveredMinutes > 0 ? 'text-orange-400' : 'text-green-400'}`}>
+                        {uncoveredHours}h {uncoveredMins > 0 ? `${uncoveredMins}m` : ''}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Barra di copertura */}
+                  <div className="mb-3">
+                    <div className="flex justify-between text-xs text-gray-400 mb-1">
+                      <span>Copertura</span>
+                      <span>{coveragePercentage}%</span>
+                    </div>
+                    <div className="w-full bg-gray-700 rounded-full h-2">
+                      <div 
+                        className={`h-2 rounded-full transition-all ${
+                          coveragePercentage === 100 ? 'bg-green-500' :
+                          coveragePercentage >= 75 ? 'bg-green-400' :
+                          coveragePercentage >= 50 ? 'bg-yellow-400' : 'bg-orange-400'
+                        }`}
+                        style={{ width: `${coveragePercentage}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                  
+                  {/* Fasce scoperte */}
+                  {uncoveredIntervals.length > 0 && (
+                    <div>
+                      <p className="text-xs text-gray-400 mb-2">⚠️ Fasce orarie scoperte:</p>
+                      <div className="space-y-1">
+                        {uncoveredIntervals.map((interval, idx) => {
+                          const startH = Math.floor(interval.start / 60).toString().padStart(2, '0');
+                          const startM = (interval.start % 60).toString().padStart(2, '0');
+                          const endH = Math.floor(interval.end / 60).toString().padStart(2, '0');
+                          const endM = (interval.end % 60).toString().padStart(2, '0');
+                          const duration = interval.end - interval.start;
+                          const durationH = Math.floor(duration / 60);
+                          const durationM = duration % 60;
+                          
+                          return (
+                            <div key={idx} className="flex items-center gap-2 text-xs">
+                              <span className="text-orange-400 font-mono">
+                                {startH}:{startM} - {endH}:{endM}
+                              </span>
+                              <span className="text-gray-500">
+                                ({durationH}h {durationM > 0 ? `${durationM}m` : ''})
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {uncoveredMinutes === 0 && (
+                    <div className="bg-green-900/30 border border-green-700 rounded p-2 mt-2">
+                      <p className="text-xs text-green-300">✅ Giornata completamente coperta</p>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             <div className="space-y-4">
               <div>
