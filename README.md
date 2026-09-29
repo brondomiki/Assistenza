@@ -13,7 +13,7 @@ Un portale web per la gestione della disponibilità di badanti e familiari per l
 - **Pannello Admin**: Il superuser può gestire tutti gli utenti e i ruoli
 - **Dashboard**: Panoramica della situazione attuale con calendario completo
 - **Tema Scuro**: Interfaccia moderna con sfondo nero e riempimento visivo delle caselle in base alle ore
-- **Visualizzazione Fasce Scoperte**: Nei calendari badanti e familiari viene mostrato un badge arancione con le ore scoperte (⚠Xh) per ogni giorno, calcolato automaticamente sommando tutte le disponibilità di badanti e familiari
+- **Visualizzazione Fasce Scoperte**: Nella finestra di inserimento disponibilità viene mostrata un'analisi dettagliata della copertura oraria con ore coperte/scoperte, percentuale di copertura e elenco delle fasce orarie non coperte
 
 ## 🛠️ Tecnologie
 
