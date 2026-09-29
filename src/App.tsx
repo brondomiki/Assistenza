@@ -83,8 +83,24 @@ function AppContent() {
           </nav>
 
           {/* Right side */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <Notifications />
+            {/* Mobile: avatar + nome compatto */}
+            <div className="flex sm:hidden items-center gap-2">
+              <button
+                onClick={() => setShowProfileModal(true)}
+                className="w-9 h-9 bg-indigo-900 rounded-full flex items-center justify-center hover:bg-indigo-800 transition cursor-pointer border-2 border-indigo-700 hover:border-indigo-500"
+                title="Modifica profilo"
+              >
+                <span className="text-lg">
+                  {profile?.avatar || (profile?.role === 'badante' ? '👩‍⚕️' : profile?.role === 'superuser' ? '👑' : '👤')}
+                </span>
+              </button>
+              <div className="text-right">
+                <p className="text-xs font-medium text-white truncate max-w-[80px]">{profile?.full_name}</p>
+              </div>
+            </div>
+            {/* Desktop: avatar + nome + ruolo completo */}
             <div className="hidden sm:flex items-center gap-2">
               <div className="text-right">
                 <p className="text-sm font-medium text-white">{profile?.full_name}</p>
@@ -102,7 +118,7 @@ function AppContent() {
             </div>
             <button
               onClick={signOut}
-              className="px-3 py-2 text-sm text-red-400 hover:bg-red-900/30 rounded-lg transition font-medium"
+              className="px-2 sm:px-3 py-2 text-sm text-red-400 hover:bg-red-900/30 rounded-lg transition font-medium"
             >
               Esci
             </button>
