@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { UserRole } from '../lib/supabase';
+import PushNotificationButton from './PushNotificationButton';
 
 const AVATAR_OPTIONS = [
   { emoji: '👨', label: 'Uomo' },
@@ -178,6 +179,15 @@ export default function ProfileModal({ onClose }: { onClose: () => void }) {
             </button>
           </div>
         </form>
+
+        {/* Sezione Notifiche */}
+        <div className="mt-8 pt-6 border-t border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-200 mb-3">🔔 Notifiche</h3>
+          <p className="text-sm text-gray-400 mb-4">
+            Attiva le notifiche per ricevere avvisi quando altri utenti inseriscono disponibilità nel calendario.
+          </p>
+          <PushNotificationButton />
+        </div>
 
         {/* Sezione Eliminazione Account */}
         <div className="mt-8 pt-6 border-t border-gray-700">
