@@ -368,6 +368,36 @@ export default function CaregiverCalendar() {
           const dayIsToday = isToday(day);
           const dayIsWeekend = isWeekend(day);
 
+          // Calcola fasce orarie scoperte
+          const allEntries = [...dayEntries, ...familyDayEntries].filter(e => e.status === 'disponibile' && e.start_time && e.end_time);
+          
+          let uncoveredHours = 0;
+          if (allEntries.length > 0) {
+            // Converti orari in minuti
+            const intervals = allEntries.map(e => {
+              const [startH, startM] = e.start_time!.split(':').map(Number);
+              const [endH, endM] = e.end_time!.split(':').map(Number);
+              return { start: startH * 60 + startM, end: endH * 60 + endM };
+            });
+            
+            // Ordina e unisci intervalli sovrapposti
+            intervals.sort((a, b) => a.start - b.start);
+            const merged: Array<{ start: number; end: number }> = [];
+            intervals.forEach(interval => {
+              if (merged.length === 0 || merged[merged.length - 1].end < interval.start) {
+                merged.push(interval);
+              } else {
+                merged[merged.length - 1].end = Math.max(merged[merged.length - 1].end, interval.end);
+              }
+            });
+            
+            // Calcola ore coperte
+            const coveredMinutes = merged.reduce((sum, interval) => sum + (interval.end - interval.start), 0);
+            uncoveredHours = Math.round(((24 * 60 - coveredMinutes) / 60) * 10) / 10;
+          } else {
+            uncoveredHours = 24;
+          }
+
           return (
             <button
               key={idx}
@@ -381,9 +411,16 @@ export default function CaregiverCalendar() {
               `}
             >
               <div className="relative z-10">
-                <span className={`font-medium ${dayIsToday ? 'text-indigo-300' : 'text-gray-200'}`}>
-                  {format(day, 'd')}
-                </span>
+                <div className="flex items-center justify-between">
+                  <span className={`font-medium ${dayIsToday ? 'text-indigo-300' : 'text-gray-200'}`}>
+                    {format(day, 'd')}
+                  </span>
+                  {uncoveredHours > 0 && (
+                    <span className="text-[7px] sm:text-[8px] text-orange-400 font-bold">
+                      ⚠{uncoveredHours}h
+                    </span>
+                  )}
+                </div>
                 
                 {/* Disponibilità Badanti (gruppo principale) */}
                 {dayEntries.length > 0 && (
