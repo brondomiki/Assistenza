@@ -23,9 +23,9 @@ export default function Notifications() {
 
       {showPanel && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setShowPanel(false)}></div>
-          <div className="absolute right-0 top-12 w-80 bg-gray-900 rounded-xl shadow-2xl border border-gray-700 z-50 max-h-96 overflow-hidden">
-            <div className="p-4 border-b border-gray-700 bg-gray-800 flex items-center justify-between">
+          <div className="fixed inset-0 z-40 bg-black/50" onClick={() => setShowPanel(false)}></div>
+          <div className="fixed top-20 left-1/2 transform -translate-x-1/2 w-[calc(100vw-2rem)] sm:w-96 bg-gray-900 rounded-xl shadow-2xl border border-gray-700 z-50 max-h-[calc(100vh-6rem)] overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-gray-700 bg-gray-800 flex items-center justify-between flex-shrink-0">
               <h3 className="font-semibold text-white">Notifiche</h3>
               {unreadCount > 0 && (
                 <button
@@ -36,7 +36,7 @@ export default function Notifications() {
                 </button>
               )}
             </div>
-            <div className="overflow-y-auto max-h-72">
+            <div className="overflow-y-auto flex-1">
               {notifications.length === 0 ? (
                 <div className="p-6 text-center text-gray-500">
                   <span className="text-3xl block mb-2">📭</span>
