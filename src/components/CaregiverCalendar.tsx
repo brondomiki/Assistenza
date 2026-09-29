@@ -43,7 +43,7 @@ import { extendCaregiverAvailability } from '../lib/availabilityExtender';
 export default function CaregiverCalendar() {
   const { user, profile } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [availability, setAvailability] = useState<Record<string, { status: string; notes?: string; start_time?: string; end_time?: string }>>({});
+  const [availability, setAvailability] = useState<Record<string, Array<{ id: string; status: string; notes?: string; start_time?: string; end_time?: string }>>>({});
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [modalStatus, setModalStatus] = useState<'disponibile' | 'non_disponibile'>('disponibile');
   const [modalNotes, setModalNotes] = useState('');
