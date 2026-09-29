@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { usePushNotifications } from '../hooks/usePushNotifications';
 import {
   startOfMonth,
   endOfMonth,
@@ -86,6 +87,7 @@ function calculateSplitIntervals(
 
 export default function CaregiverCalendar() {
   const { user, profile } = useAuth();
+  const { showLocalNotification } = usePushNotifications();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [availability, setAvailability] = useState<Record<string, AvailabilityEntry[]>>({});
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -212,6 +214,14 @@ export default function CaregiverCalendar() {
         await sendNotification(
           `${profile?.full_name} ha aggiornato la disponibilità per il ${format(selectedDate, 'dd/MM/yyyy')}`
         );
+        
+        // Mostra notifica locale
+        showLocalNotification(
+          'Disponibilità aggiornata',
+          `${profile?.full_name} ha aggiornato la disponibilità per il ${format(selectedDate, 'dd/MM/yyyy')}`,
+          '/'
+        );
+        
         setShowModal(false);
         fetchMyAvailability();
         fetchAllAvailability();
@@ -231,6 +241,14 @@ export default function CaregiverCalendar() {
         await sendNotification(
           `${profile?.full_name} ha aggiornato la disponibilità per il ${format(selectedDate, 'dd/MM/yyyy')}`
         );
+        
+        // Mostra notifica locale
+        showLocalNotification(
+          'Disponibilità aggiornata',
+          `${profile?.full_name} ha aggiornato la disponibilità per il ${format(selectedDate, 'dd/MM/yyyy')}`,
+          '/'
+        );
+        
         setShowModal(false);
         fetchMyAvailability();
         fetchAllAvailability();

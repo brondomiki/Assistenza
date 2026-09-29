@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { usePushNotifications } from '../hooks/usePushNotifications';
 import {
   startOfMonth,
   endOfMonth,
@@ -38,6 +39,7 @@ function isItalianHoliday(date: Date): boolean {
 
 export default function FamilyCalendar() {
   const { user, profile } = useAuth();
+  const { showLocalNotification } = usePushNotifications();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [availability, setAvailability] = useState<Record<string, { status: string; notes?: string; start_time?: string; end_time?: string }>>({});
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -131,6 +133,14 @@ export default function FamilyCalendar() {
       await sendNotification(
         `${profile?.full_name} ha aggiornato la propria disponibilità familiare per il ${format(selectedDate, 'dd/MM/yyyy')}: ${modalStatus === 'disponibile' ? `Disponibile ${timeInfo}` : 'Non disponibile'}`
       );
+      
+      // Mostra notifica locale
+      showLocalNotification(
+        'Disponibilità familiare aggiornata',
+        `${profile?.full_name} ha aggiornato la disponibilità per il ${format(selectedDate, 'dd/MM/yyyy')}`,
+        '/'
+      );
+      
       setShowModal(false);
       fetchMyAvailability();
       fetchAllAvailability();
@@ -153,6 +163,14 @@ export default function FamilyCalendar() {
       await sendNotification(
         `${profile?.full_name} ha RIMOSSO la propria disponibilità familiare per il ${format(selectedDate, 'dd/MM/yyyy')}`
       );
+      
+      // Mostra notifica locale
+      showLocalNotification(
+        'Disponibilità rimossa',
+        `${profile?.full_name} ha rimosso la disponibilità per il ${format(selectedDate, 'dd/MM/yyyy')}`,
+        '/'
+      );
+      
       setShowModal(false);
       fetchMyAvailability();
       fetchAllAvailability();
