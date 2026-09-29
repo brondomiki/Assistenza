@@ -74,14 +74,19 @@ export default function CaregiverCalendar() {
       .lte('date', monthEnd);
 
     if (data) {
-      const map: Record<string, { status: string; notes?: string; start_time?: string; end_time?: string }> = {};
+      // Raggruppa tutte le entry per data
+      const map: Record<string, Array<{ id: string; status: string; notes?: string; start_time?: string; end_time?: string }>> = {};
       data.forEach((item) => {
-        map[item.date] = { 
-          status: item.status, 
+        if (!map[item.date]) {
+          map[item.date] = [];
+        }
+        map[item.date].push({
+          id: item.id,
+          status: item.status,
           notes: item.notes,
           start_time: item.start_time,
           end_time: item.end_time,
-        };
+        });
       });
       setAvailability(map);
     }
