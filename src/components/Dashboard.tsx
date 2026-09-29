@@ -261,97 +261,6 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Weekly Summary */}
-      <div className="bg-gray-900 rounded-2xl shadow-lg p-6 border border-gray-800">
-        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-          <span>📊</span> Riepilogo Settimanale - Tutti i giorni
-        </h3>
-        
-        <div className="space-y-3">
-          {(() => {
-            const today = new Date();
-            const weekStart = startOfWeek(today, { weekStartsOn: 1 });
-            const weekEnd = endOfWeek(today, { weekStartsOn: 1 });
-            const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
-            
-            return weekDays.map((day, dayIdx) => {
-              const dateStr = format(day, 'yyyy-MM-dd');
-              const dayEntries = entriesByDate[dateStr] || [];
-              const available = dayEntries.filter(e => e.status === 'disponibile');
-              const unavailable = dayEntries.filter(e => e.status === 'non_disponibile');
-              const isToday = format(today, 'yyyy-MM-dd') === dateStr;
-              
-              return (
-                <div 
-                  key={dayIdx}
-                  className={`p-4 rounded-lg border ${
-                    isToday 
-                      ? 'bg-indigo-900/30 border-indigo-600' 
-                      : 'bg-gray-800 border-gray-700'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-3">
-                      <span className={`text-lg font-bold ${isToday ? 'text-indigo-400' : 'text-gray-300'}`}>
-                        {format(day, 'EEE dd/MM', { locale: it })}
-                      </span>
-                      {isToday && (
-                        <span className="px-2 py-1 bg-indigo-600 text-white text-xs rounded-full">
-                          Oggi
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex gap-2 text-sm">
-                      <span className="text-green-400">✓ {available.length}</span>
-                      <span className="text-red-400">✗ {unavailable.length}</span>
-                    </div>
-                  </div>
-                  
-                  {dayEntries.length > 0 ? (
-                    <div className="space-y-1">
-                      {dayEntries.slice(0, 5).map((entry, idx) => (
-                        <div key={idx} className="flex items-center gap-2 text-sm">
-                          <span className="text-xl">{entry.avatar || '👤'}</span>
-                          <span className="text-gray-300 flex-1">{entry.full_name}</span>
-                          <span className={`px-2 py-0.5 rounded text-xs ${
-                            entry.type === 'badante' 
-                              ? 'bg-green-900/50 text-green-300' 
-                              : 'bg-purple-900/50 text-purple-300'
-                          }`}>
-                            {entry.type === 'badante' ? '👩‍⚕️' : '👨‍👩‍👧'}
-                          </span>
-                          {entry.start_time && entry.end_time && (
-                            <span className="text-gray-400 text-xs">
-                              {entry.start_time}-{entry.end_time}
-                            </span>
-                          )}
-                          <span className={`px-2 py-0.5 rounded text-xs ${
-                            entry.status === 'disponibile'
-                              ? 'bg-green-600 text-white'
-                              : 'bg-red-600 text-white'
-                          }`}>
-                            {entry.status === 'disponibile' ? '✓' : '✗'}
-                          </span>
-                        </div>
-                      ))}
-                      {dayEntries.length > 5 && (
-                        <div className="text-xs text-gray-500 mt-1">
-                          +{dayEntries.length - 5} altri
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="text-sm text-gray-500 italic">
-                      Nessuna disponibilità registrata
-                    </div>
-                  )}
-                </div>
-              );
-            });
-          })()}
-        </div>
-      </div>
-
       {/* Complete Calendar with all members */}
       <div className="bg-gray-900 rounded-2xl shadow-lg p-6 border border-gray-800">
         <div className="flex items-center justify-between mb-6">
@@ -622,8 +531,8 @@ export default function Dashboard() {
 
                   {/* Summary */}
                   <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-                    <h4 className="font-semibold text-white mb-2">📊 Riepilogo del giorno</h4>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
+                    <h4 className="font-semibold text-white mb-3">📊 Riepilogo del giorno</h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm mb-4">
                       <div>
                         <p className="text-gray-400">Disponibili:</p>
                         <p className="text-lg font-bold text-green-400">
@@ -637,6 +546,166 @@ export default function Dashboard() {
                         </p>
                       </div>
                     </div>
+                    
+                    {/* Ore coperte e scoperte */}
+                    {(() => {
+                      // Calcola le ore coperte sommando tutti gli intervalli di disponibilità
+                      const availableEntries = dayEntries.filter(e => 
+                        e.status === 'disponibile' && e.start_time && e.end_time
+                      );
+                      
+                      if (availableEntries.length === 0) {
+                        return (
+                          <div className="border-t border-gray-700 pt-3">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-gray-400 text-sm">Ore coperte:</p>
+                                <p className="text-2xl font-bold text-red-400">0h</p>
+                              </div>
+                              <div>
+                                <p className="text-gray-400 text-sm">Ore scoperte:</p>
+                                <p className="text-2xl font-bold text-red-500">24h</p>
+                              </div>
+                            </div>
+                            <div className="mt-2 bg-red-900/30 border border-red-700 rounded p-2">
+                              <p className="text-sm text-red-300">⚠️ Nessuna copertura per questo giorno</p>
+                            </div>
+                          </div>
+                        );
+                      }
+                      
+                      // Converti orari in minuti per calcolare la copertura
+                      const timeToMinutes = (time: string) => {
+                        const [h, m] = time.split(':').map(Number);
+                        return h * 60 + m;
+                      };
+                      
+                      // Crea un array di intervalli coperti
+                      const intervals: Array<{ start: number; end: number }> = [];
+                      availableEntries.forEach(entry => {
+                        const start = timeToMinutes(entry.start_time!);
+                        const end = timeToMinutes(entry.end_time!);
+                        intervals.push({ start, end });
+                      });
+                      
+                      // Ordina gli intervalli per inizio
+                      intervals.sort((a, b) => a.start - b.start);
+                      
+                      // Unisci gli intervalli sovrapposti
+                      const merged: Array<{ start: number; end: number }> = [];
+                      intervals.forEach(interval => {
+                        if (merged.length === 0 || merged[merged.length - 1].end < interval.start) {
+                          merged.push(interval);
+                        } else {
+                          merged[merged.length - 1].end = Math.max(
+                            merged[merged.length - 1].end,
+                            interval.end
+                          );
+                        }
+                      });
+                      
+                      // Calcola le ore coperte totali
+                      const coveredMinutes = merged.reduce((sum, interval) => {
+                        return sum + (interval.end - interval.start);
+                      }, 0);
+                      
+                      const coveredHours = Math.floor(coveredMinutes / 60);
+                      const coveredMins = coveredMinutes % 60;
+                      
+                      // Calcola le ore scoperte
+                      const uncoveredMinutes = (24 * 60) - coveredMinutes;
+                      const uncoveredHours = Math.floor(uncoveredMinutes / 60);
+                      const uncoveredMins = uncoveredMinutes % 60;
+                      
+                      // Calcola la percentuale di copertura
+                      const coveragePercentage = Math.round((coveredMinutes / (24 * 60)) * 100);
+                      
+                      return (
+                        <div className="border-t border-gray-700 pt-3">
+                          <div className="flex items-center justify-between mb-3">
+                            <div>
+                              <p className="text-gray-400 text-sm">Ore coperte:</p>
+                              <p className="text-2xl font-bold text-green-400">
+                                {coveredHours}h {coveredMins > 0 ? `${coveredMins}m` : ''}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-gray-400 text-sm">Ore scoperte:</p>
+                              <p className={`text-2xl font-bold ${
+                                uncoveredMinutes > 0 ? 'text-orange-400' : 'text-green-400'
+                              }`}>
+                                {uncoveredHours}h {uncoveredMins > 0 ? `${uncoveredMins}m` : ''}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          {/* Barra di copertura */}
+                          <div className="mb-3">
+                            <div className="flex justify-between text-xs text-gray-400 mb-1">
+                              <span>Copertura</span>
+                              <span>{coveragePercentage}%</span>
+                            </div>
+                            <div className="w-full bg-gray-700 rounded-full h-3">
+                              <div 
+                                className={`h-3 rounded-full transition-all ${
+                                  coveragePercentage === 100 
+                                    ? 'bg-green-500' 
+                                    : coveragePercentage >= 75 
+                                    ? 'bg-green-400'
+                                    : coveragePercentage >= 50
+                                    ? 'bg-yellow-400'
+                                    : 'bg-orange-400'
+                                }`}
+                                style={{ width: `${coveragePercentage}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                          
+                          {/* Visualizzazione fasce orarie */}
+                          <div>
+                            <p className="text-xs text-gray-400 mb-2">Fasce orarie coperte:</p>
+                            <div className="space-y-1">
+                              {merged.map((interval, idx) => {
+                                const startH = Math.floor(interval.start / 60).toString().padStart(2, '0');
+                                const startM = (interval.start % 60).toString().padStart(2, '0');
+                                const endH = Math.floor(interval.end / 60).toString().padStart(2, '0');
+                                const endM = (interval.end % 60).toString().padStart(2, '0');
+                                const duration = interval.end - interval.start;
+                                const durationH = Math.floor(duration / 60);
+                                const durationM = duration % 60;
+                                
+                                return (
+                                  <div key={idx} className="flex items-center gap-2 text-sm">
+                                    <span className="text-green-400 font-mono">
+                                      {startH}:{startM} - {endH}:{endM}
+                                    </span>
+                                    <span className="text-gray-500 text-xs">
+                                      ({durationH}h {durationM > 0 ? `${durationM}m` : ''})
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                          
+                          {uncoveredMinutes > 0 && (
+                            <div className="mt-3 bg-orange-900/30 border border-orange-700 rounded p-2">
+                              <p className="text-sm text-orange-300">
+                                ⚠️ Ci sono {uncoveredHours}h {uncoveredMins > 0 ? `${uncoveredMins}m` : ''} scoperte
+                              </p>
+                            </div>
+                          )}
+                          
+                          {uncoveredMinutes === 0 && (
+                            <div className="mt-3 bg-green-900/30 border border-green-700 rounded p-2">
+                              <p className="text-sm text-green-300">
+                                ✅ Giornata completamente coperta
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               );
