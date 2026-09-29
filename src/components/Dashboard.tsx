@@ -309,7 +309,7 @@ export default function Dashboard() {
                 onClick={() => handleDayClick(day)}
                 disabled={!isCurrentMonth}
                 className={`
-                  relative p-2 min-h-[100px] rounded-lg text-sm transition border overflow-hidden
+                  relative p-1 sm:p-2 min-h-[60px] sm:min-h-[100px] rounded-lg text-xs sm:text-sm transition border overflow-hidden
                   ${!isCurrentMonth ? 'opacity-30 cursor-default' : 'hover:border-indigo-400 cursor-pointer'}
                   ${dayIsToday ? 'border-indigo-500 border-2' : 'border-gray-700'}
                   bg-gray-800
@@ -329,28 +329,28 @@ export default function Dashboard() {
                     {format(day, 'd')}
                   </span>
                   {entries.length > 0 && (
-                    <div className="mt-1 space-y-1">
+                    <div className="mt-0.5 sm:mt-1 space-y-0.5 sm:space-y-1">
                       {/* Avatar membri */}
-                      <div className="flex items-center gap-1 flex-wrap">
+                      <div className="flex items-center gap-0.5 sm:gap-1 flex-wrap">
                         {entries.filter(e => e.status === 'disponibile').slice(0, 3).map((e, i) => (
                           <span
                             key={i}
-                            className="text-lg"
+                            className="text-sm sm:text-lg"
                             title={e.full_name}
                           >
                             {e.avatar || (e.type === 'badante' ? '👩‍⚕️' : '👤')}
                           </span>
                         ))}
                         {entries.filter(e => e.status === 'disponibile').length > 3 && (
-                          <span className="text-[10px] text-gray-300">
+                          <span className="text-[8px] sm:text-[10px] text-gray-300">
                             +{entries.filter(e => e.status === 'disponibile').length - 3}
                           </span>
                         )}
                       </div>
                       {/* Orari */}
-                      <div className="space-y-0.5">
+                      <div className="space-y-0 sm:space-y-0.5">
                         {entries.slice(0, 2).map((e, i) => (
-                          <div key={i} className="text-[9px] font-medium leading-tight truncate">
+                          <div key={i} className="text-[8px] sm:text-[9px] font-medium leading-tight truncate">
                             {e.start_time && e.end_time && (
                               <span className={`${e.status === 'disponibile' ? 'text-white' : 'text-red-300'}`}>
                                 {e.start_time}-{e.end_time}
@@ -359,7 +359,7 @@ export default function Dashboard() {
                           </div>
                         ))}
                         {entries.length > 2 && (
-                          <div className="text-[9px] text-gray-300">+{entries.length - 2} altri</div>
+                          <div className="text-[8px] sm:text-[9px] text-gray-300">+{entries.length - 2} altri</div>
                         )}
                       </div>
                     </div>
