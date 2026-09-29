@@ -101,9 +101,7 @@ export default function FamilyCalendar() {
 
   async function handleDayClick(date: Date) {
     if (!isSameMonth(date, currentMonth)) return;
-    if (!isWeekend(date) && !isItalianHoliday(date)) {
-      return;
-    }
+    // I familiari possono inserire disponibilità in tutti i giorni della settimana
     setSelectedDate(date);
     const dateStr = format(date, 'yyyy-MM-dd');
     const existing = availability[dateStr];
@@ -224,7 +222,7 @@ export default function FamilyCalendar() {
     <div className="bg-gray-900 rounded-2xl shadow-lg p-6 border border-gray-800">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold text-white flex items-center gap-2">
-          <span className="text-2xl">👨‍👩‍👧‍👦</span> Calendario Familiari (Weekend & Festivi)
+          <span className="text-2xl">👨‍👩‍👧‍👦</span> Calendario Familiari
         </h2>
         <div className="flex items-center gap-2">
           <button
@@ -246,7 +244,7 @@ export default function FamilyCalendar() {
       </div>
 
       <p className="text-sm text-gray-400 mb-4">
-        💡 Clicca sui giorni del weekend (sabato/domenica) o sui giorni festivi per indicare la tua disponibilità.
+        💡 Clicca su qualsiasi giorno per indicare la tua disponibilità.
       </p>
 
       {/* Calendar Grid */}
@@ -265,9 +263,8 @@ export default function FamilyCalendar() {
           const dayEntries = allFamilyAvailability.filter(e => e.date === dateStr);
           const isCurrentMonth = isSameMonth(day, currentMonth);
           const dayIsToday = isToday(day);
-          const dayIsWeekend = isWeekend(day);
           const dayIsHoliday = isItalianHoliday(day);
-          const isClickable = isCurrentMonth && (dayIsWeekend || dayIsHoliday);
+          const isClickable = isCurrentMonth;
           
           // Calculate coverage for my availability
           const coverage = myAvail ? getCoveragePercentage(myAvail.start_time, myAvail.end_time) : 0;
@@ -281,8 +278,7 @@ export default function FamilyCalendar() {
                 relative p-2 min-h-[100px] rounded-lg text-sm transition border overflow-hidden
                 ${!isClickable ? 'opacity-30 cursor-default' : 'hover:border-purple-400 cursor-pointer'}
                 ${dayIsToday ? 'border-purple-500 border-2' : 'border-gray-700'}
-                ${dayIsHoliday && isCurrentMonth ? 'bg-yellow-900/20' : ''}
-                ${dayIsWeekend && !dayIsHoliday && isCurrentMonth ? 'bg-purple-900/20' : 'bg-gray-800'}
+                ${dayIsHoliday && isCurrentMonth ? 'bg-yellow-900/20' : 'bg-gray-800'}
               `}
             >
               {/* Background fill based on coverage */}
@@ -356,10 +352,6 @@ export default function FamilyCalendar() {
           <span>Non disponibile</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-purple-900/20 border border-gray-700 rounded"></div>
-          <span>Weekend</span>
-        </div>
-        <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-yellow-900/20 border border-gray-700 rounded"></div>
           <span>Festivo</span>
         </div>
@@ -374,9 +366,9 @@ export default function FamilyCalendar() {
           <div className="bg-gray-900 rounded-2xl p-6 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto border border-gray-700">
             <h3 className="text-lg font-bold text-white mb-2">
               {format(selectedDate, 'EEEE dd MMMM yyyy', { locale: it })}
-              {(isWeekend(selectedDate) || isItalianHoliday(selectedDate)) && (
+              {isItalianHoliday(selectedDate) && (
                 <span className="ml-2 text-sm font-normal text-purple-400">
-                  {isItalianHoliday(selectedDate) ? '🎉 Festivo' : '📅 Weekend'}
+                  🎉 Festivo
                 </span>
               )}
             </h3>

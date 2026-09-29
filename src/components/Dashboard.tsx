@@ -261,6 +261,97 @@ export default function Dashboard() {
         )}
       </div>
 
+      {/* Weekly Summary */}
+      <div className="bg-gray-900 rounded-2xl shadow-lg p-6 border border-gray-800">
+        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+          <span>📊</span> Riepilogo Settimanale - Tutti i giorni
+        </h3>
+        
+        <div className="space-y-3">
+          {(() => {
+            const today = new Date();
+            const weekStart = startOfWeek(today, { weekStartsOn: 1 });
+            const weekEnd = endOfWeek(today, { weekStartsOn: 1 });
+            const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
+            
+            return weekDays.map((day, dayIdx) => {
+              const dateStr = format(day, 'yyyy-MM-dd');
+              const dayEntries = entriesByDate[dateStr] || [];
+              const available = dayEntries.filter(e => e.status === 'disponibile');
+              const unavailable = dayEntries.filter(e => e.status === 'non_disponibile');
+              const isToday = format(today, 'yyyy-MM-dd') === dateStr;
+              
+              return (
+                <div 
+                  key={dayIdx}
+                  className={`p-4 rounded-lg border ${
+                    isToday 
+                      ? 'bg-indigo-900/30 border-indigo-600' 
+                      : 'bg-gray-800 border-gray-700'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <span className={`text-lg font-bold ${isToday ? 'text-indigo-400' : 'text-gray-300'}`}>
+                        {format(day, 'EEE dd/MM', { locale: it })}
+                      </span>
+                      {isToday && (
+                        <span className="px-2 py-1 bg-indigo-600 text-white text-xs rounded-full">
+                          Oggi
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex gap-2 text-sm">
+                      <span className="text-green-400">✓ {available.length}</span>
+                      <span className="text-red-400">✗ {unavailable.length}</span>
+                    </div>
+                  </div>
+                  
+                  {dayEntries.length > 0 ? (
+                    <div className="space-y-1">
+                      {dayEntries.slice(0, 5).map((entry, idx) => (
+                        <div key={idx} className="flex items-center gap-2 text-sm">
+                          <span className="text-xl">{entry.avatar || '👤'}</span>
+                          <span className="text-gray-300 flex-1">{entry.full_name}</span>
+                          <span className={`px-2 py-0.5 rounded text-xs ${
+                            entry.type === 'badante' 
+                              ? 'bg-green-900/50 text-green-300' 
+                              : 'bg-purple-900/50 text-purple-300'
+                          }`}>
+                            {entry.type === 'badante' ? '👩‍⚕️' : '👨‍👩‍👧'}
+                          </span>
+                          {entry.start_time && entry.end_time && (
+                            <span className="text-gray-400 text-xs">
+                              {entry.start_time}-{entry.end_time}
+                            </span>
+                          )}
+                          <span className={`px-2 py-0.5 rounded text-xs ${
+                            entry.status === 'disponibile'
+                              ? 'bg-green-600 text-white'
+                              : 'bg-red-600 text-white'
+                          }`}>
+                            {entry.status === 'disponibile' ? '✓' : '✗'}
+                          </span>
+                        </div>
+                      ))}
+                      {dayEntries.length > 5 && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          +{dayEntries.length - 5} altri
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-500 italic">
+                      Nessuna disponibilità registrata
+                    </div>
+                  )}
+                </div>
+              );
+            });
+          })()}
+        </div>
+      </div>
+
       {/* Complete Calendar with all members */}
       <div className="bg-gray-900 rounded-2xl shadow-lg p-6 border border-gray-800">
         <div className="flex items-center justify-between mb-6">
