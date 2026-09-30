@@ -107,7 +107,7 @@ function calculateUncoveredIntervals(
 export default function FamilyCalendar() {
   const { user, profile } = useAuth();
   const { showLocalNotification } = usePushNotifications();
-  const { triggerRefresh } = useCalendarSync();
+  const { refreshTrigger, triggerRefresh } = useCalendarSync();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [availability, setAvailability] = useState<Record<string, { status: string; notes?: string; start_time?: string; end_time?: string }>>({});
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -127,7 +127,7 @@ export default function FamilyCalendar() {
       fetchAllAvailability();
       fetchAllCaregiverAvailability();
     }
-  }, [user, currentMonth]);
+  }, [user, currentMonth, refreshTrigger]);
 
   async function fetchMyAvailability() {
     const monthStart = format(startOfMonth(currentMonth), 'yyyy-MM-dd');
