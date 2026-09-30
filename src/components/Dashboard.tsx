@@ -451,7 +451,7 @@ export default function Dashboard() {
                                 {entry.status === 'disponibile' ? '✓ Disponibile' : '✗ Non disponibile'}
                               </span>
                             </div>
-                            {entry.status === 'disponibile' && entry.start_time && entry.end_time && (
+                            {entry.start_time && entry.end_time && (
                               <p className="text-sm text-gray-200 font-medium">
                                 🕐 Orario: <span className="font-semibold">{entry.start_time} - {entry.end_time}</span>
                               </p>
@@ -501,7 +501,7 @@ export default function Dashboard() {
                                 {entry.status === 'disponibile' ? '✓ Disponibile' : '✗ Non disponibile'}
                               </span>
                             </div>
-                            {entry.status === 'disponibile' && entry.start_time && entry.end_time && (
+                            {entry.start_time && entry.end_time && (
                               <p className="text-sm text-gray-200 font-medium">
                                 🕐 Orario: <span className="font-semibold">{entry.start_time} - {entry.end_time}</span>
                               </p>
