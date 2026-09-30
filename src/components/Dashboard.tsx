@@ -302,6 +302,9 @@ export default function Dashboard() {
             const isCurrentMonth = isSameMonth(day, currentMonth);
             const dayIsToday = isToday(day);
             const coverage = getDayCoverage(day);
+            
+            // Calcola ore mancanti (solo ore, senza minuti)
+            const uncoveredHours = Math.ceil((24 * (100 - coverage.percentage)) / 100);
 
             return (
               <button
@@ -323,7 +326,7 @@ export default function Dashboard() {
 
                 {/* Content */}
                 <div className="relative z-10">
-                  {/* Numero del giorno */}
+                  {/* Numero del giorno e ore mancanti */}
                   <div className="flex items-center justify-between mb-1">
                     <span className={`text-xs sm:text-sm font-medium ${
                       dayIsToday 
@@ -332,6 +335,11 @@ export default function Dashboard() {
                     }`}>
                       {format(day, 'd')}
                     </span>
+                    {uncoveredHours > 0 && (
+                      <span className="text-[8px] sm:text-[9px] text-orange-400 font-bold">
+                        -{uncoveredHours}h
+                      </span>
+                    )}
                   </div>
 
                   {/* Eventi - Stile Google Calendar */}
