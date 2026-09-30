@@ -359,7 +359,7 @@ export default function CaregiverCalendar() {
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
+      <div className="grid grid-cols-7 gap-px bg-gray-700 border border-gray-700 rounded-lg overflow-hidden">
         {days.map((day, idx) => {
           const dateStr = format(day, 'yyyy-MM-dd');
           const dayEntries = allCaregiverAvailability.filter(e => e.date === dateStr);
@@ -374,75 +374,58 @@ export default function CaregiverCalendar() {
               onClick={() => handleDayClick(day)}
               disabled={!isCurrentMonth}
               className={`
-                relative p-1 sm:p-2 min-h-[60px] sm:min-h-[100px] rounded-lg text-xs sm:text-sm transition border overflow-hidden
-                ${!isCurrentMonth ? 'opacity-30 cursor-default' : 'hover:border-indigo-400 cursor-pointer'}
-                ${dayIsToday ? 'border-indigo-500 border-2' : 'border-gray-700'}
-                ${dayIsWeekend && isCurrentMonth ? 'bg-orange-900/20' : 'bg-gray-800'}
+                relative p-1 sm:p-2 min-h-[80px] sm:min-h-[120px] text-left transition
+                ${!isCurrentMonth ? 'bg-gray-900 opacity-40 cursor-default' : 'bg-gray-800 hover:bg-gray-750 cursor-pointer'}
+                ${dayIsWeekend && isCurrentMonth ? 'bg-gray-850' : ''}
               `}
             >
-              <div className="relative z-10">
-                <span className={`font-medium ${dayIsToday ? 'text-indigo-300' : 'text-gray-200'}`}>
+              {/* Numero del giorno */}
+              <div className="flex items-center justify-between mb-1">
+                <span className={`text-xs sm:text-sm font-medium ${
+                  dayIsToday 
+                    ? 'bg-indigo-500 text-white w-6 h-6 rounded-full flex items-center justify-center' 
+                    : 'text-gray-300'
+                }`}>
                   {format(day, 'd')}
                 </span>
-                
-                {/* Disponibilità Badanti (gruppo principale) */}
-                {dayEntries.length > 0 && (
-                  <div className="mt-0.5 sm:mt-1 space-y-0.5 sm:space-y-1">
-                    <div className="flex items-center gap-0.5 sm:gap-1 flex-wrap">
-                      {dayEntries.slice(0, 3).map((entry, i) => (
-                        <span
-                          key={i}
-                          className="text-sm sm:text-xl"
-                          title={(entry.profiles as any)?.full_name}
-                        >
-                          {(entry.profiles as any)?.avatar || '👤'}
-                        </span>
-                      ))}
-                      {dayEntries.length > 3 && (
-                        <span className="text-[8px] sm:text-[10px] text-gray-400">+{dayEntries.length - 3}</span>
-                      )}
-                    </div>
-                    <div className="space-y-0 sm:space-y-0.5">
-                      {dayEntries.slice(0, 2).map((entry, i) => (
-                        <div key={i} className={`text-[8px] sm:text-[9px] font-medium leading-tight truncate ${
-                          entry.status === 'disponibile' ? 'text-green-300' : 'text-red-300'
-                        }`}>
-                          {entry.start_time && entry.end_time ? `${entry.start_time}-${entry.end_time}` : ''}
-                        </div>
-                      ))}
-                      {dayEntries.length > 2 && (
-                        <div className="text-[8px] sm:text-[9px] text-gray-400">+{dayEntries.length - 2} altre</div>
-                      )}
-                    </div>
-                  </div>
-                )}
+              </div>
 
-                {/* Disponibilità Familiari (colore più tenue) */}
-                {familyDayEntries.length > 0 && (
-                  <div className="mt-0.5 sm:mt-1 space-y-0.5 sm:space-y-1 opacity-50">
-                    <div className="flex items-center gap-0.5 sm:gap-1 flex-wrap">
-                      {familyDayEntries.slice(0, 2).map((entry, i) => (
-                        <span
-                          key={i}
-                          className="text-xs sm:text-sm"
-                          title={`Familiare: ${(entry.profiles as any)?.full_name}`}
-                        >
-                          {(entry.profiles as any)?.avatar || '👤'}
-                        </span>
-                      ))}
-                      {familyDayEntries.length > 2 && (
-                        <span className="text-[8px] text-gray-500">+{familyDayEntries.length - 2}</span>
-                      )}
-                    </div>
-                    <div className="space-y-0">
-                      {familyDayEntries.slice(0, 1).map((entry, i) => (
-                        <div key={i} className={`text-[7px] sm:text-[8px] font-medium leading-tight truncate ${
-                          entry.status === 'disponibile' ? 'text-purple-400' : 'text-red-400'
-                        }`}>
-                          {entry.start_time && entry.end_time ? `${entry.start_time}-${entry.end_time}` : ''}
-                        </div>
-                      ))}
-                    </div>
+              {/* Eventi - Stile Google Calendar */}
+              <div className="space-y-0.5">
+                {/* Badanti */}
+                {dayEntries.slice(0, 3).map((entry, i) => (
+                  <div
+                    key={i}
+                    className={`text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded truncate font-medium ${
+                      entry.status === 'disponibile'
+                        ? 'bg-green-600 text-white'
+                        : 'bg-red-600 text-white'
+                    }`}
+                    title={`${(entry.profiles as any)?.full_name}: ${entry.start_time}-${entry.end_time}`}
+                  >
+                    {entry.start_time && entry.end_time ? `${entry.start_time}` : ''}
+                  </div>
+                ))}
+                
+                {/* Familiari */}
+                {familyDayEntries.slice(0, 2).map((entry, i) => (
+                  <div
+                    key={i}
+                    className={`text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded truncate font-medium opacity-70 ${
+                      entry.status === 'disponibile'
+                        ? 'bg-purple-600 text-white'
+                        : 'bg-red-600 text-white'
+                    }`}
+                    title={`Familiare: ${(entry.profiles as any)?.full_name}: ${entry.start_time}-${entry.end_time}`}
+                  >
+                    {entry.start_time && entry.end_time ? `${entry.start_time}` : ''}
+                  </div>
+                ))}
+
+                {/* Contatore eventi extra */}
+                {dayEntries.length + familyDayEntries.length > 5 && (
+                  <div className="text-[8px] sm:text-[9px] text-gray-400 font-medium">
+                    +{dayEntries.length + familyDayEntries.length - 5} altri
                   </div>
                 )}
               </div>
@@ -451,21 +434,18 @@ export default function CaregiverCalendar() {
         })}
       </div>
 
-      <div className="mt-4 flex items-center gap-4 text-sm text-gray-300">
+      <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-gray-300">
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-gradient-to-t from-green-600 to-green-500 rounded"></div>
+          <div className="w-4 h-4 bg-green-600 rounded"></div>
           <span>Badante disponibile</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-gradient-to-t from-red-600 to-red-500 rounded"></div>
-          <span>Non disponibile</span>
+          <div className="w-4 h-4 bg-purple-600 rounded opacity-70"></div>
+          <span>Familiare</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-gradient-to-t from-purple-600 to-purple-500 rounded opacity-50"></div>
-          <span className="opacity-70">Familiare</span>
-        </div>
-        <div className="flex items-center gap-2 ml-auto">
-          <span className="text-xs text-gray-400">📏 Riempimento = ore di copertura</span>
+          <div className="w-4 h-4 bg-red-600 rounded"></div>
+          <span>Non disponibile</span>
         </div>
       </div>
 
