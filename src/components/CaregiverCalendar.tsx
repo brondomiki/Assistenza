@@ -245,6 +245,8 @@ export default function CaregiverCalendar() {
     const dateStr = format(date, 'yyyy-MM-dd');
     const dayEntries = availability[dateStr] || [];
     
+    console.log('Day entries:', dayEntries);
+    
     // Calcola gli intervalli scoperti
     const uncovered = calculateUncoveredIntervals(
       dayEntries.map(e => ({
@@ -253,6 +255,9 @@ export default function CaregiverCalendar() {
         status: e.status
       }))
     );
+    
+    console.log('Uncovered intervals:', uncovered);
+    
     setUncoveredIntervals(uncovered);
     
     // Reset modal con il primo intervallo scoperto come default
