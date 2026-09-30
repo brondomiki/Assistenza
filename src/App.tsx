@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { CalendarSyncProvider } from './contexts/CalendarSyncContext';
 import LoginPage from './components/LoginPage';
 import RegisterPage from './components/RegisterPage';
 import CaregiverCalendar from './components/CaregiverCalendar';
@@ -196,7 +197,9 @@ function AppContent() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <CalendarSyncProvider>
+        <AppContent />
+      </CalendarSyncProvider>
     </AuthProvider>
   );
 }

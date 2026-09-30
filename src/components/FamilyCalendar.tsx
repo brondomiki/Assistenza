@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useCalendarSync } from '../contexts/CalendarSyncContext';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import {
   startOfMonth,
@@ -40,6 +41,7 @@ function isItalianHoliday(date: Date): boolean {
 export default function FamilyCalendar() {
   const { user, profile } = useAuth();
   const { showLocalNotification } = usePushNotifications();
+  const { triggerRefresh } = useCalendarSync();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [availability, setAvailability] = useState<Record<string, { status: string; notes?: string; start_time?: string; end_time?: string }>>({});
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -159,6 +161,8 @@ export default function FamilyCalendar() {
       setShowModal(false);
       fetchMyAvailability();
       fetchAllAvailability();
+      // Aggiorna anche il calendario generale (Dashboard)
+      triggerRefresh();
     }
   }
 
@@ -189,6 +193,8 @@ export default function FamilyCalendar() {
       setShowModal(false);
       fetchMyAvailability();
       fetchAllAvailability();
+      // Aggiorna anche il calendario generale (Dashboard)
+      triggerRefresh();
     }
   }
 

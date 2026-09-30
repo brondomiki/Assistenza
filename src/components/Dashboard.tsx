@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useCalendarSync } from '../contexts/CalendarSyncContext';
 import {
   format,
   startOfMonth,
@@ -44,6 +45,7 @@ interface DayEntry {
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const { refreshTrigger } = useCalendarSync();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [stats, setStats] = useState({
     caregiverAvailable: 0,
@@ -65,7 +67,7 @@ export default function Dashboard() {
       // Estendi automaticamente le disponibilità per i mesi futuri
       extendCaregiverAvailability(user.id, currentMonth);
     }
-  }, [user, currentMonth]);
+  }, [user, currentMonth, refreshTrigger]);
 
   async function fetchStats() {
     const monthStart = format(startOfMonth(currentMonth), 'yyyy-MM-dd');
