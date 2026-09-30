@@ -38,6 +38,72 @@ function isItalianHoliday(date: Date): boolean {
   return holidays.includes(dateStr);
 }
 
+// Funzione per calcolare gli intervalli scoperti
+function calculateUncoveredIntervals(
+  existingIntervals: Array<{ start_time: string; end_time: string; status: string }>
+): Array<{ start_time: string; end_time: string }> {
+  const timeToMinutes = (time: string) => {
+    const [h, m] = time.split(':').map(Number);
+    return h * 60 + m;
+  };
+  
+  const minutesToTime = (mins: number) => {
+    const h = Math.floor(mins / 60).toString().padStart(2, '0');
+    const m = (mins % 60).toString().padStart(2, '0');
+    return `${h}:${m}`;
+  };
+  
+  // Filtra solo le disponibilità (non le non disponibilità)
+  const availableIntervals = existingIntervals
+    .filter(e => e.status === 'disponibile')
+    .map(e => ({
+      start: timeToMinutes(e.start_time),
+      end: timeToMinutes(e.end_time)
+    }));
+  
+  // Se non ci sono disponibilità, tutto il giorno è scoperto
+  if (availableIntervals.length === 0) {
+    return [{ start_time: '00:00', end_time: '24:00' }];
+  }
+  
+  // Ordina per orario di inizio
+  availableIntervals.sort((a, b) => a.start - b.start);
+  
+  // Unisci intervalli sovrapposti
+  const merged: Array<{ start: number; end: number }> = [];
+  availableIntervals.forEach(interval => {
+    if (merged.length === 0 || merged[merged.length - 1].end < interval.start) {
+      merged.push(interval);
+    } else {
+      merged[merged.length - 1].end = Math.max(merged[merged.length - 1].end, interval.end);
+    }
+  });
+  
+  // Calcola gli intervalli scoperti
+  const uncovered: Array<{ start_time: string; end_time: string }> = [];
+  let lastEnd = 0;
+  
+  merged.forEach(interval => {
+    if (interval.start > lastEnd) {
+      uncovered.push({
+        start_time: minutesToTime(lastEnd),
+        end_time: minutesToTime(interval.start)
+      });
+    }
+    lastEnd = interval.end;
+  });
+  
+  // Aggiungi l'intervallo finale se non arriva a 24:00
+  if (lastEnd < 24 * 60) {
+    uncovered.push({
+      start_time: minutesToTime(lastEnd),
+      end_time: '24:00'
+    });
+  }
+  
+  return uncovered;
+}
+
 export default function FamilyCalendar() {
   const { user, profile } = useAuth();
   const { showLocalNotification } = usePushNotifications();
@@ -53,6 +119,7 @@ export default function FamilyCalendar() {
   const [allFamilyAvailability, setAllFamilyAvailability] = useState<any[]>([]);
   const [allCaregiverAvailability, setAllCaregiverAvailability] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [uncoveredIntervals, setUncoveredIntervals] = useState<Array<{ start_time: string; end_time: string }>>([]);
 
   useEffect(() => {
     if (user) {
@@ -123,17 +190,66 @@ export default function FamilyCalendar() {
     // I familiari possono inserire disponibilità in tutti i giorni della settimana
     setSelectedDate(date);
     const dateStr = format(date, 'yyyy-MM-dd');
+    
+    // Raccogli TUTTE le disponibilità del giorno (badanti + familiari)
+    const allDayEntries = [
+      ...allCaregiverAvailability.filter(e => e.date === dateStr),
+      ...allFamilyAvailability.filter(e => e.date === dateStr)
+    ];
+    
+    // Calcola gli intervalli scoperti considerando TUTTE le disponibilità
+    const uncovered = calculateUncoveredIntervals(
+      allDayEntries.map(e => ({
+        start_time: e.start_time || '00:00',
+        end_time: e.end_time || '24:00',
+        status: e.status
+      }))
+    );
+    
+    setUncoveredIntervals(uncovered);
+    
     const existing = availability[dateStr];
     setModalStatus(existing?.status === 'non_disponibile' ? 'non_disponibile' : 'disponibile');
     setModalNotes(existing?.notes || '');
-    setModalStartTime(existing?.start_time || '09:00');
-    setModalEndTime(existing?.end_time || '18:00');
+    
+    // Usa il primo intervallo scoperto come default
+    if (uncovered.length > 0) {
+      setModalStartTime(uncovered[0].start_time);
+      setModalEndTime(uncovered[0].end_time);
+    } else {
+      setModalStartTime(existing?.start_time || '09:00');
+      setModalEndTime(existing?.end_time || '18:00');
+    }
+    
     setShowModal(true);
   }
 
   async function saveAvailability() {
     if (!selectedDate || !user) return;
     const dateStr = format(selectedDate, 'yyyy-MM-dd');
+
+    // Se è una disponibilità, valida che sia in un intervallo scoperto
+    if (modalStatus === 'disponibile') {
+      const timeToMinutes = (time: string) => {
+        const [h, m] = time.split(':').map(Number);
+        return h * 60 + m;
+      };
+      
+      const newStart = timeToMinutes(modalStartTime);
+      const newEnd = timeToMinutes(modalEndTime);
+      
+      // Controlla se l'intervallo è completamente contenuto in un intervallo scoperto
+      const isValid = uncoveredIntervals.some(interval => {
+        const intStart = timeToMinutes(interval.start_time);
+        const intEnd = timeToMinutes(interval.end_time);
+        return newStart >= intStart && newEnd <= intEnd;
+      });
+      
+      if (!isValid) {
+        alert('⚠️ L\'orario inserito si sovrappone a una disponibilità esistente. Inserisci solo orari scoperti.');
+        return;
+      }
+    }
 
     const timeInfo = `dalle ${modalStartTime} alle ${modalEndTime}`;
 
@@ -601,30 +717,40 @@ export default function FamilyCalendar() {
                 </div>
               </div>
 
-              {/* Orari - sempre visibili */}
-              <>
-                {/* Preset orari rapidi */}
+              {/* Fasce orarie scoperte */}
+              {modalStatus === 'disponibile' && uncoveredIntervals.length > 0 && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Orari rapidi</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    🕐 Orari disponibili (fasce scoperte)
+                  </label>
                   <div className="flex flex-wrap gap-2">
-                    {timePresets.map((preset) => (
+                    {uncoveredIntervals.map((interval, idx) => (
                       <button
-                        key={preset.label}
+                        key={idx}
                         onClick={() => {
-                          setModalStartTime(preset.start);
-                          setModalEndTime(preset.end);
+                          setModalStartTime(interval.start_time);
+                          setModalEndTime(interval.end_time);
                         }}
                         className={`px-3 py-1.5 rounded-full text-xs font-medium transition border ${
-                          modalStartTime === preset.start && modalEndTime === preset.end
+                          modalStartTime === interval.start_time && modalEndTime === interval.end_time
                             ? 'bg-purple-600 text-white border-purple-600'
                             : 'bg-gray-800 text-gray-300 border-gray-600 hover:border-purple-500 hover:bg-gray-700'
                         }`}
                       >
-                        {preset.label}
+                        {interval.start_time}-{interval.end_time}
                       </button>
                     ))}
                   </div>
                 </div>
+              )}
+
+              {modalStatus === 'disponibile' && uncoveredIntervals.length === 0 && (
+                <div className="bg-orange-900/30 border border-orange-700 rounded-lg p-3">
+                  <p className="text-sm text-orange-300">
+                    ⚠️ Non ci sono fasce orarie scoperte. Rimuovi prima una disponibilità esistente.
+                  </p>
+                </div>
+              )}
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -658,7 +784,6 @@ export default function FamilyCalendar() {
                 }`}>
                   📅 {modalStatus === 'disponibile' ? 'Sarai disponibile' : 'Non sarai disponibile'} dalle <strong>{modalStartTime}</strong> alle <strong>{modalEndTime}</strong>
                 </div>
-              </>
 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">Note (opzionale)</label>

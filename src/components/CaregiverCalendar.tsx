@@ -243,20 +243,21 @@ export default function CaregiverCalendar() {
     setSelectedDate(date);
     
     const dateStr = format(date, 'yyyy-MM-dd');
-    const dayEntries = availability[dateStr] || [];
     
-    console.log('Day entries:', dayEntries);
+    // Raccogli TUTTE le disponibilità del giorno (badanti + familiari)
+    const allDayEntries = [
+      ...allCaregiverAvailability.filter(e => e.date === dateStr),
+      ...allFamilyAvailability.filter(e => e.date === dateStr)
+    ];
     
-    // Calcola gli intervalli scoperti
+    // Calcola gli intervalli scoperti considerando TUTTE le disponibilità
     const uncovered = calculateUncoveredIntervals(
-      dayEntries.map(e => ({
+      allDayEntries.map(e => ({
         start_time: e.start_time || '00:00',
         end_time: e.end_time || '24:00',
         status: e.status
       }))
     );
-    
-    console.log('Uncovered intervals:', uncovered);
     
     setUncoveredIntervals(uncovered);
     
