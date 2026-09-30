@@ -274,11 +274,21 @@ export default function FamilyCalendar() {
         '/'
       );
       
+      // Aggiorna tutti i dati prima di chiudere il modal
+      await fetchMyAvailability();
+      await fetchAllAvailability();
+      await fetchAllCaregiverAvailability();
+      
+      // Chiudi il modal
       setShowModal(false);
-      fetchMyAvailability();
-      fetchAllAvailability();
+      
       // Aggiorna anche il calendario generale (Dashboard)
       triggerRefresh();
+      
+      // Forza un re-render dopo un breve delay per mobile
+      setTimeout(() => {
+        triggerRefresh();
+      }, 100);
     }
   }
 
@@ -306,11 +316,21 @@ export default function FamilyCalendar() {
         '/'
       );
       
+      // Aggiorna tutti i dati prima di chiudere il modal
+      await fetchMyAvailability();
+      await fetchAllAvailability();
+      await fetchAllCaregiverAvailability();
+      
+      // Chiudi il modal
       setShowModal(false);
-      fetchMyAvailability();
-      fetchAllAvailability();
+      
       // Aggiorna anche il calendario generale (Dashboard)
       triggerRefresh();
+      
+      // Forza un re-render dopo un breve delay per mobile
+      setTimeout(() => {
+        triggerRefresh();
+      }, 100);
     }
   }
 

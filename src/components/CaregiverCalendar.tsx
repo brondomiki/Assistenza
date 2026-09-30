@@ -352,11 +352,21 @@ export default function CaregiverCalendar() {
           '/'
         );
         
+        // Aggiorna tutti i dati prima di chiudere il modal
+        await fetchMyAvailability();
+        await fetchAllAvailability();
+        await fetchAllFamilyAvailability();
+        
+        // Chiudi il modal
         setShowModal(false);
-        fetchMyAvailability();
-        fetchAllAvailability();
+        
         // Aggiorna anche il calendario generale (Dashboard)
         triggerRefresh();
+        
+        // Forza un re-render dopo un breve delay per mobile
+        setTimeout(() => {
+          triggerRefresh();
+        }, 100);
       }
     } else {
       // Comportamento normale: aggiungi una nuova entry
@@ -381,11 +391,21 @@ export default function CaregiverCalendar() {
           '/'
         );
         
+        // Aggiorna tutti i dati prima di chiudere il modal
+        await fetchMyAvailability();
+        await fetchAllAvailability();
+        await fetchAllFamilyAvailability();
+        
+        // Chiudi il modal
         setShowModal(false);
-        fetchMyAvailability();
-        fetchAllAvailability();
+        
         // Aggiorna anche il calendario generale (Dashboard)
         triggerRefresh();
+        
+        // Forza un re-render dopo un breve delay per mobile
+        setTimeout(() => {
+          triggerRefresh();
+        }, 100);
       }
     }
   }
@@ -403,11 +423,22 @@ export default function CaregiverCalendar() {
       await sendNotification(
         `${profile?.full_name} ha rimosso una fascia oraria`
       );
+      
+      // Aggiorna tutti i dati prima di chiudere il modal
+      await fetchMyAvailability();
+      await fetchAllAvailability();
+      await fetchAllFamilyAvailability();
+      
+      // Chiudi il modal
       setShowModal(false);
-      fetchMyAvailability();
-      fetchAllAvailability();
+      
       // Aggiorna anche il calendario generale (Dashboard)
       triggerRefresh();
+      
+      // Forza un re-render dopo un breve delay per mobile
+      setTimeout(() => {
+        triggerRefresh();
+      }, 100);
     }
   }
 
