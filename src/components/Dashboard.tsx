@@ -295,13 +295,12 @@ export default function Dashboard() {
           ))}
         </div>
 
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 gap-px bg-gray-700 border border-gray-700 rounded-lg overflow-hidden">
           {days.map((day, idx) => {
             const dateStr = format(day, 'yyyy-MM-dd');
             const entries = entriesByDate[dateStr] || [];
             const isCurrentMonth = isSameMonth(day, currentMonth);
             const dayIsToday = isToday(day);
-            const coverage = getDayCoverage(day);
 
             return (
               <button
@@ -309,62 +308,46 @@ export default function Dashboard() {
                 onClick={() => handleDayClick(day)}
                 disabled={!isCurrentMonth}
                 className={`
-                  relative p-1 sm:p-2 min-h-[60px] sm:min-h-[100px] rounded-lg text-xs sm:text-sm transition border overflow-hidden
-                  ${!isCurrentMonth ? 'opacity-30 cursor-default' : 'hover:border-indigo-400 cursor-pointer'}
-                  ${dayIsToday ? 'border-indigo-500 border-2' : 'border-gray-700'}
-                  bg-gray-800
+                  relative p-1 sm:p-2 min-h-[80px] sm:min-h-[120px] text-left transition
+                  ${!isCurrentMonth ? 'bg-gray-900 opacity-40 cursor-default' : 'bg-gray-800 hover:bg-gray-750 cursor-pointer'}
                 `}
               >
-                {/* Background fill based on coverage */}
-                {coverage.percentage > 0 && (
-                  <div 
-                    className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t ${coverage.color} opacity-80 transition-all duration-300`}
-                    style={{ height: `${coverage.percentage}%` }}
-                  />
-                )}
-                
-                {/* Content */}
-                <div className="relative z-10">
-                  <span className={`font-medium ${dayIsToday ? 'text-indigo-300' : 'text-gray-200'}`}>
+                {/* Numero del giorno */}
+                <div className="flex items-center justify-between mb-1">
+                  <span className={`text-xs sm:text-sm font-medium ${
+                    dayIsToday 
+                      ? 'bg-indigo-500 text-white w-6 h-6 rounded-full flex items-center justify-center' 
+                      : 'text-gray-300'
+                  }`}>
                     {format(day, 'd')}
                   </span>
-                  {entries.length > 0 && (
-                    <div className="mt-0.5 sm:mt-1 space-y-0.5 sm:space-y-1">
-                      {/* Avatar membri */}
-                      <div className="flex items-center gap-0.5 sm:gap-1 flex-wrap">
-                        {entries.filter(e => e.status === 'disponibile').slice(0, 3).map((e, i) => (
-                          <span
-                            key={i}
-                            className="text-sm sm:text-lg"
-                            title={e.full_name}
-                          >
-                            {e.avatar || (e.type === 'badante' ? '👩‍⚕️' : '👤')}
-                          </span>
-                        ))}
-                        {entries.filter(e => e.status === 'disponibile').length > 3 && (
-                          <span className="text-[8px] sm:text-[10px] text-gray-300">
-                            +{entries.filter(e => e.status === 'disponibile').length - 3}
-                          </span>
-                        )}
-                      </div>
-                      {/* Orari */}
-                      <div className="space-y-0 sm:space-y-0.5">
-                        {entries.slice(0, 2).map((e, i) => (
-                          <div key={i} className="text-[8px] sm:text-[9px] font-medium leading-tight truncate">
-                            {e.start_time && e.end_time && (
-                              <span className={`${e.status === 'disponibile' ? 'text-white' : 'text-red-300'}`}>
-                                {e.start_time}-{e.end_time}
-                              </span>
-                            )}
-                          </div>
-                        ))}
-                        {entries.length > 2 && (
-                          <div className="text-[8px] sm:text-[9px] text-gray-300">+{entries.length - 2} altri</div>
-                        )}
-                      </div>
-                    </div>
-                  )}
                 </div>
+
+                {/* Eventi - Stile Google Calendar */}
+                {entries.length > 0 && (
+                  <div className="space-y-0.5">
+                    {entries.slice(0, 4).map((entry, i) => (
+                      <div
+                        key={i}
+                        className={`text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded truncate font-medium ${
+                          entry.status === 'disponibile'
+                            ? entry.type === 'badante'
+                              ? 'bg-green-600 text-white'
+                              : 'bg-purple-600 text-white'
+                            : 'bg-red-600 text-white'
+                        }`}
+                        title={`${entry.full_name}: ${entry.start_time}-${entry.end_time}`}
+                      >
+                        {entry.start_time && entry.end_time ? `${entry.start_time}` : ''}
+                      </div>
+                    ))}
+                    {entries.length > 4 && (
+                      <div className="text-[8px] sm:text-[9px] text-gray-400 font-medium">
+                        +{entries.length - 4} altri
+                      </div>
+                    )}
+                  </div>
+                )}
               </button>
             );
           })}
@@ -373,23 +356,16 @@ export default function Dashboard() {
         {/* Legend */}
         <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-gray-300">
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-gradient-to-t from-green-500 to-green-600 rounded"></div>
+            <div className="w-4 h-4 bg-green-600 rounded"></div>
             <span>Badante disponibile</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-gradient-to-t from-purple-500 to-purple-600 rounded"></div>
+            <div className="w-4 h-4 bg-purple-600 rounded"></div>
             <span>Familiare disponibile</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-gradient-to-t from-green-500 via-blue-500 to-purple-500 rounded"></div>
-            <span>Entrambi disponibili</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-gray-800 border border-gray-700 rounded"></div>
-            <span>Nessuna disponibilità</span>
-          </div>
-          <div className="flex items-center gap-2 ml-auto">
-            <span className="text-xs text-gray-400">📏 Riempimento = ore di copertura</span>
+            <div className="w-4 h-4 bg-red-600 rounded"></div>
+            <span>Non disponibile</span>
           </div>
         </div>
       </div>

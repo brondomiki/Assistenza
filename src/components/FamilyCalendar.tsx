@@ -273,19 +273,15 @@ export default function FamilyCalendar() {
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
+      <div className="grid grid-cols-7 gap-px bg-gray-700 border border-gray-700 rounded-lg overflow-hidden">
         {days.map((day, idx) => {
           const dateStr = format(day, 'yyyy-MM-dd');
-          const myAvail = availability[dateStr];
           const dayEntries = allFamilyAvailability.filter(e => e.date === dateStr);
           const caregiverDayEntries = allCaregiverAvailability.filter(e => e.date === dateStr);
           const isCurrentMonth = isSameMonth(day, currentMonth);
           const dayIsToday = isToday(day);
           const dayIsHoliday = isItalianHoliday(day);
           const isClickable = isCurrentMonth;
-          
-          // Calculate coverage for my availability
-          const coverage = myAvail ? getCoveragePercentage(myAvail.start_time, myAvail.end_time) : 0;
 
           return (
             <button
@@ -293,93 +289,61 @@ export default function FamilyCalendar() {
               onClick={() => handleDayClick(day)}
               disabled={!isClickable}
               className={`
-                relative p-1 sm:p-2 min-h-[60px] sm:min-h-[100px] rounded-lg text-xs sm:text-sm transition border overflow-hidden
-                ${!isClickable ? 'opacity-30 cursor-default' : 'hover:border-purple-400 cursor-pointer'}
-                ${dayIsToday ? 'border-purple-500 border-2' : 'border-gray-700'}
-                ${dayIsHoliday && isCurrentMonth ? 'bg-yellow-900/20' : 'bg-gray-800'}
+                relative p-1 sm:p-2 min-h-[80px] sm:min-h-[120px] text-left transition
+                ${!isClickable ? 'bg-gray-900 opacity-40 cursor-default' : 'bg-gray-800 hover:bg-gray-750 cursor-pointer'}
+                ${dayIsHoliday && isCurrentMonth ? 'bg-yellow-900/10' : ''}
               `}
             >
-              {/* Background fill based on coverage */}
-              {myAvail && coverage > 0 && (
-                <div 
-                  className={`absolute bottom-0 left-0 right-0 opacity-80 transition-all duration-300 ${
-                    myAvail.status === 'disponibile' 
-                      ? 'bg-gradient-to-t from-purple-600 to-purple-500' 
-                      : 'bg-gradient-to-t from-red-600 to-red-500'
-                  }`}
-                  style={{ height: `${coverage}%` }}
-                />
-              )}
-              
-              {/* Content */}
-              <div className="relative z-10">
-                <span className={`font-medium ${dayIsToday ? 'text-purple-300' : 'text-gray-200'}`}>
+              {/* Numero del giorno */}
+              <div className="flex items-center justify-between mb-1">
+                <span className={`text-xs sm:text-sm font-medium ${
+                  dayIsToday 
+                    ? 'bg-purple-500 text-white w-6 h-6 rounded-full flex items-center justify-center' 
+                    : 'text-gray-300'
+                }`}>
                   {format(day, 'd')}
                 </span>
                 {dayIsHoliday && isCurrentMonth && (
-                  <span className="absolute top-0.5 right-0.5 text-xs">🎉</span>
+                  <span className="text-xs">🎉</span>
                 )}
-                
-                {/* Disponibilità Familiari (gruppo principale) */}
-                {dayEntries.length > 0 && (
-                  <div className="mt-0.5 sm:mt-1 space-y-0.5 sm:space-y-1">
-                    {/* Avatar grandi */}
-                    <div className="flex items-center gap-0.5 sm:gap-1 flex-wrap">
-                      {dayEntries.slice(0, 3).map((entry, i) => (
-                        <span
-                          key={i}
-                          className="text-sm sm:text-xl"
-                          title={(entry.profiles as any)?.full_name}
-                        >
-                          {(entry.profiles as any)?.avatar || '👤'}
-                        </span>
-                      ))}
-                      {dayEntries.length > 3 && (
-                        <span className="text-[8px] sm:text-[10px] text-gray-400">+{dayEntries.length - 3}</span>
-                      )}
-                    </div>
-                    {/* Orari */}
-                    <div className="space-y-0 sm:space-y-0.5">
-                      {dayEntries.slice(0, 2).map((entry, i) => (
-                        <div key={i} className={`text-[8px] sm:text-[9px] font-medium leading-tight truncate ${
-                          entry.status === 'disponibile' ? 'text-purple-300' : 'text-red-300'
-                        }`}>
-                          {entry.start_time && entry.end_time ? `${entry.start_time}-${entry.end_time}` : ''}
-                        </div>
-                      ))}
-                      {dayEntries.length > 2 && (
-                        <div className="text-[8px] sm:text-[9px] text-gray-400">+{dayEntries.length - 2} altri</div>
-                      )}
-                    </div>
-                  </div>
-                )}
+              </div>
 
-                {/* Disponibilità Badanti (colore più tenue) */}
-                {caregiverDayEntries.length > 0 && (
-                  <div className="mt-0.5 sm:mt-1 space-y-0.5 sm:space-y-1 opacity-50">
-                    <div className="flex items-center gap-0.5 sm:gap-1 flex-wrap">
-                      {caregiverDayEntries.slice(0, 2).map((entry, i) => (
-                        <span
-                          key={i}
-                          className="text-xs sm:text-sm"
-                          title={`Badante: ${(entry.profiles as any)?.full_name}`}
-                        >
-                          {(entry.profiles as any)?.avatar || '👤'}
-                        </span>
-                      ))}
-                      {caregiverDayEntries.length > 2 && (
-                        <span className="text-[8px] text-gray-500">+{caregiverDayEntries.length - 2}</span>
-                      )}
-                    </div>
-                    <div className="space-y-0">
-                      {caregiverDayEntries.slice(0, 1).map((entry, i) => (
-                        <div key={i} className={`text-[7px] sm:text-[8px] font-medium leading-tight truncate ${
-                          entry.status === 'disponibile' ? 'text-green-400' : 'text-red-400'
-                        }`}>
-                          {entry.start_time && entry.end_time ? `${entry.start_time}-${entry.end_time}` : ''}
-                        </div>
-                      ))}
-                    </div>
+              {/* Eventi - Stile Google Calendar */}
+              <div className="space-y-0.5">
+                {/* Familiari */}
+                {dayEntries.slice(0, 3).map((entry, i) => (
+                  <div
+                    key={i}
+                    className={`text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded truncate font-medium ${
+                      entry.status === 'disponibile'
+                        ? 'bg-purple-600 text-white'
+                        : 'bg-red-600 text-white'
+                    }`}
+                    title={`${(entry.profiles as any)?.full_name}: ${entry.start_time}-${entry.end_time}`}
+                  >
+                    {entry.start_time && entry.end_time ? `${entry.start_time}` : ''}
+                  </div>
+                ))}
+                
+                {/* Badanti */}
+                {caregiverDayEntries.slice(0, 2).map((entry, i) => (
+                  <div
+                    key={i}
+                    className={`text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded truncate font-medium opacity-70 ${
+                      entry.status === 'disponibile'
+                        ? 'bg-green-600 text-white'
+                        : 'bg-red-600 text-white'
+                    }`}
+                    title={`Badante: ${(entry.profiles as any)?.full_name}: ${entry.start_time}-${entry.end_time}`}
+                  >
+                    {entry.start_time && entry.end_time ? `${entry.start_time}` : ''}
+                  </div>
+                ))}
+
+                {/* Contatore eventi extra */}
+                {dayEntries.length + caregiverDayEntries.length > 5 && (
+                  <div className="text-[8px] sm:text-[9px] text-gray-400 font-medium">
+                    +{dayEntries.length + caregiverDayEntries.length - 5} altri
                   </div>
                 )}
               </div>
@@ -391,23 +355,16 @@ export default function FamilyCalendar() {
       {/* Legend */}
       <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-gray-300">
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-gradient-to-t from-purple-600 to-purple-500 rounded"></div>
+          <div className="w-4 h-4 bg-purple-600 rounded"></div>
           <span>Familiare disponibile</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-gradient-to-t from-red-600 to-red-500 rounded"></div>
+          <div className="w-4 h-4 bg-green-600 rounded opacity-70"></div>
+          <span>Badante</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 bg-red-600 rounded"></div>
           <span>Non disponibile</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-gradient-to-t from-green-600 to-green-500 rounded opacity-50"></div>
-          <span className="opacity-70">Badante</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-yellow-900/20 border border-gray-700 rounded"></div>
-          <span>Festivo</span>
-        </div>
-        <div className="flex items-center gap-2 ml-auto">
-          <span className="text-xs text-gray-400">📏 Riempimento = ore di copertura</span>
         </div>
       </div>
 
