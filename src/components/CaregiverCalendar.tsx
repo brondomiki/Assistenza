@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useCalendarSync } from '../contexts/CalendarSyncContext';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import {
   startOfMonth,
@@ -85,9 +86,76 @@ function calculateSplitIntervals(
   return result;
 }
 
+// Funzione helper per calcolare gli intervalli scoperti
+function calculateUncoveredIntervals(
+  existingIntervals: Array<{ start_time: string; end_time: string; status: string }>
+): Array<{ start_time: string; end_time: string }> {
+  const timeToMinutes = (time: string) => {
+    const [h, m] = time.split(':').map(Number);
+    return h * 60 + m;
+  };
+  
+  const minutesToTime = (mins: number) => {
+    const h = Math.floor(mins / 60).toString().padStart(2, '0');
+    const m = (mins % 60).toString().padStart(2, '0');
+    return `${h}:${m}`;
+  };
+  
+  // Filtra solo le disponibilità (non le non disponibilità)
+  const availableIntervals = existingIntervals
+    .filter(e => e.status === 'disponibile')
+    .map(e => ({
+      start: timeToMinutes(e.start_time),
+      end: timeToMinutes(e.end_time)
+    }));
+  
+  // Se non ci sono disponibilità, tutto il giorno è scoperto
+  if (availableIntervals.length === 0) {
+    return [{ start_time: '00:00', end_time: '24:00' }];
+  }
+  
+  // Ordina per orario di inizio
+  availableIntervals.sort((a, b) => a.start - b.start);
+  
+  // Unisci intervalli sovrapposti
+  const merged: Array<{ start: number; end: number }> = [];
+  availableIntervals.forEach(interval => {
+    if (merged.length === 0 || merged[merged.length - 1].end < interval.start) {
+      merged.push(interval);
+    } else {
+      merged[merged.length - 1].end = Math.max(merged[merged.length - 1].end, interval.end);
+    }
+  });
+  
+  // Calcola gli intervalli scoperti
+  const uncovered: Array<{ start_time: string; end_time: string }> = [];
+  let lastEnd = 0;
+  
+  merged.forEach(interval => {
+    if (interval.start > lastEnd) {
+      uncovered.push({
+        start_time: minutesToTime(lastEnd),
+        end_time: minutesToTime(interval.start)
+      });
+    }
+    lastEnd = interval.end;
+  });
+  
+  // Aggiungi l'intervallo finale se non arriva a 24:00
+  if (lastEnd < 24 * 60) {
+    uncovered.push({
+      start_time: minutesToTime(lastEnd),
+      end_time: '24:00'
+    });
+  }
+  
+  return uncovered;
+}
+
 export default function CaregiverCalendar() {
   const { user, profile } = useAuth();
   const { showLocalNotification } = usePushNotifications();
+  const { triggerRefresh } = useCalendarSync();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [availability, setAvailability] = useState<Record<string, AvailabilityEntry[]>>({});
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -99,6 +167,7 @@ export default function CaregiverCalendar() {
   const [allCaregiverAvailability, setAllCaregiverAvailability] = useState<any[]>([]);
   const [allFamilyAvailability, setAllFamilyAvailability] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [uncoveredIntervals, setUncoveredIntervals] = useState<Array<{ start_time: string; end_time: string }>>([]);
 
   useEffect(() => {
     if (user) {
@@ -176,11 +245,26 @@ export default function CaregiverCalendar() {
     const dateStr = format(date, 'yyyy-MM-dd');
     const dayEntries = availability[dateStr] || [];
     
-    // Reset modal
-    setModalStatus('non_disponibile');
+    // Calcola gli intervalli scoperti
+    const uncovered = calculateUncoveredIntervals(
+      dayEntries.map(e => ({
+        start_time: e.start_time || '00:00',
+        end_time: e.end_time || '24:00',
+        status: e.status
+      }))
+    );
+    setUncoveredIntervals(uncovered);
+    
+    // Reset modal con il primo intervallo scoperto come default
+    setModalStatus('disponibile');
     setModalNotes('');
-    setModalStartTime('08:00');
-    setModalEndTime('17:00');
+    if (uncovered.length > 0) {
+      setModalStartTime(uncovered[0].start_time);
+      setModalEndTime(uncovered[0].end_time);
+    } else {
+      setModalStartTime('00:00');
+      setModalEndTime('24:00');
+    }
     
     setShowModal(true);
   }
@@ -190,6 +274,29 @@ export default function CaregiverCalendar() {
     const dateStr = format(selectedDate, 'yyyy-MM-dd');
     
     const existingEntries = availability[dateStr] || [];
+    
+    // Se è una disponibilità, valida che sia in un intervallo scoperto
+    if (modalStatus === 'disponibile') {
+      const timeToMinutes = (time: string) => {
+        const [h, m] = time.split(':').map(Number);
+        return h * 60 + m;
+      };
+      
+      const newStart = timeToMinutes(modalStartTime);
+      const newEnd = timeToMinutes(modalEndTime);
+      
+      // Controlla se l'intervallo è completamente contenuto in un intervallo scoperto
+      const isValid = uncoveredIntervals.some(interval => {
+        const intStart = timeToMinutes(interval.start_time);
+        const intEnd = timeToMinutes(interval.end_time);
+        return newStart >= intStart && newEnd <= intEnd;
+      });
+      
+      if (!isValid) {
+        alert('⚠️ L\'orario inserito si sovrappone a una disponibilità esistente. Inserisci solo orari scoperti.');
+        return;
+      }
+    }
     
     // Se è una non disponibilità, calcola lo split automatico
     if (modalStatus === 'non_disponibile' && existingEntries.length > 0) {
@@ -202,7 +309,7 @@ export default function CaregiverCalendar() {
       const splitIntervals = calculateSplitIntervals(
         existingEntries.map(e => ({
           start_time: e.start_time || '00:00',
-          end_time: e.end_time || '23:59',
+          end_time: e.end_time || '24:00',
           status: e.status
         })),
         newInterval
@@ -242,6 +349,8 @@ export default function CaregiverCalendar() {
         setShowModal(false);
         fetchMyAvailability();
         fetchAllAvailability();
+        // Aggiorna anche il calendario generale (Dashboard)
+        triggerRefresh();
       }
     } else {
       // Comportamento normale: aggiungi una nuova entry
@@ -269,6 +378,8 @@ export default function CaregiverCalendar() {
         setShowModal(false);
         fetchMyAvailability();
         fetchAllAvailability();
+        // Aggiorna anche il calendario generale (Dashboard)
+        triggerRefresh();
       }
     }
   }
@@ -289,6 +400,8 @@ export default function CaregiverCalendar() {
       setShowModal(false);
       fetchMyAvailability();
       fetchAllAvailability();
+      // Aggiorna anche il calendario generale (Dashboard)
+      triggerRefresh();
     }
   }
 
@@ -316,15 +429,6 @@ export default function CaregiverCalendar() {
   const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
   const weekDays = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
-
-  const timePresets = [
-    { label: '🌅 Giorno intero', start: '00:00', end: '23:59' },
-    { label: 'Mattina (8-13)', start: '08:00', end: '13:00' },
-    { label: 'Pomeriggio (13-18)', start: '13:00', end: '18:00' },
-    { label: 'Giornata (8-17)', start: '08:00', end: '17:00' },
-    { label: 'Intera giornata (8-20)', start: '08:00', end: '20:00' },
-    { label: 'Notte (20-8)', start: '20:00', end: '08:00' },
-  ];
 
   return (
     <div className="bg-gray-900 rounded-2xl shadow-lg p-6 border border-gray-800">
@@ -689,27 +793,39 @@ export default function CaregiverCalendar() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Orari rapidi</label>
-                <div className="flex flex-wrap gap-2">
-                  {timePresets.map((preset) => (
-                    <button
-                      key={preset.label}
-                      onClick={() => {
-                        setModalStartTime(preset.start);
-                        setModalEndTime(preset.end);
-                      }}
-                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition border ${
-                        modalStartTime === preset.start && modalEndTime === preset.end
-                          ? 'bg-indigo-600 text-white border-indigo-600'
-                          : 'bg-gray-800 text-gray-300 border-gray-600 hover:border-indigo-500 hover:bg-gray-700'
-                      }`}
-                    >
-                      {preset.label}
-                    </button>
-                  ))}
+              {modalStatus === 'disponibile' && uncoveredIntervals.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    🕐 Orari disponibili (fasce scoperte)
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {uncoveredIntervals.map((interval, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => {
+                          setModalStartTime(interval.start_time);
+                          setModalEndTime(interval.end_time);
+                        }}
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition border ${
+                          modalStartTime === interval.start_time && modalEndTime === interval.end_time
+                            ? 'bg-green-600 text-white border-green-600'
+                            : 'bg-gray-800 text-gray-300 border-gray-600 hover:border-green-500 hover:bg-gray-700'
+                        }`}
+                      >
+                        {interval.start_time}-{interval.end_time}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {modalStatus === 'disponibile' && uncoveredIntervals.length === 0 && (
+                <div className="bg-orange-900/30 border border-orange-700 rounded-lg p-3">
+                  <p className="text-sm text-orange-300">
+                    ⚠️ Non ci sono fasce orarie scoperte. Rimuovi prima una disponibilità esistente.
+                  </p>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
