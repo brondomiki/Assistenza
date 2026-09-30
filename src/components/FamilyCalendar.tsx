@@ -304,6 +304,9 @@ export default function FamilyCalendar() {
             const coveredMinutes = merged.reduce((sum, interval) => sum + (interval.end - interval.start), 0);
             coveragePercentage = Math.round((coveredMinutes / (24 * 60)) * 100);
           }
+          
+          // Calcola ore mancanti (solo ore, senza minuti)
+          const uncoveredHours = Math.ceil((24 * (100 - coveragePercentage)) / 100);
 
           return (
             <button
@@ -326,7 +329,7 @@ export default function FamilyCalendar() {
 
               {/* Content */}
               <div className="relative z-10">
-                {/* Numero del giorno */}
+                {/* Numero del giorno e ore mancanti */}
                 <div className="flex items-center justify-between mb-1">
                   <span className={`text-xs sm:text-sm font-medium ${
                     dayIsToday 
@@ -335,9 +338,16 @@ export default function FamilyCalendar() {
                   }`}>
                     {format(day, 'd')}
                   </span>
-                  {dayIsHoliday && isCurrentMonth && (
-                    <span className="text-xs">🎉</span>
-                  )}
+                  <div className="flex items-center gap-1">
+                    {uncoveredHours > 0 && (
+                      <span className="text-[8px] sm:text-[9px] text-orange-400 font-bold">
+                        -{uncoveredHours}h
+                      </span>
+                    )}
+                    {dayIsHoliday && isCurrentMonth && (
+                      <span className="text-xs">🎉</span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Eventi - Stile Google Calendar */}

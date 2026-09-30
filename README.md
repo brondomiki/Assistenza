@@ -14,6 +14,7 @@ Un portale web per la gestione della disponibilità di badanti e familiari per l
 - **Dashboard**: Panoramica della situazione attuale con calendario completo
 - **Tema Scuro**: Interfaccia moderna con sfondo nero e riempimento visivo delle caselle in base alle ore
 - **Visualizzazione Fasce Scoperte**: Nella finestra di inserimento disponibilità viene mostrata un'analisi dettagliata della copertura oraria con ore coperte/scoperte, percentuale di copertura e elenco delle fasce orarie non coperte
+- **Indicatori Ore Mancanti**: Ogni cella del calendario mostra un badge arancione con le ore mancanti per completare la giornata (es: "-8h"), calcolato arrotondando per eccesso per eliminare i minuti
 - **Design Google Calendar**: Calendari con stile moderno ispirato a Google Calendar, con barre colorate che mostrano orario completo (inizio-fine) e riempimento visivo delle celle in base alla copertura oraria
 
 ## 🛠️ Tecnologie
