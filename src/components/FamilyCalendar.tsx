@@ -283,69 +283,102 @@ export default function FamilyCalendar() {
           const dayIsHoliday = isItalianHoliday(day);
           const isClickable = isCurrentMonth;
 
+          // Calcola copertura oraria
+          const allEntries = [...dayEntries, ...caregiverDayEntries].filter(e => e.status === 'disponibile' && e.start_time && e.end_time);
+          let coveragePercentage = 0;
+          if (allEntries.length > 0) {
+            const intervals = allEntries.map(e => {
+              const [startH, startM] = e.start_time!.split(':').map(Number);
+              const [endH, endM] = e.end_time!.split(':').map(Number);
+              return { start: startH * 60 + startM, end: endH * 60 + endM };
+            });
+            intervals.sort((a, b) => a.start - b.start);
+            const merged: Array<{ start: number; end: number }> = [];
+            intervals.forEach(interval => {
+              if (merged.length === 0 || merged[merged.length - 1].end < interval.start) {
+                merged.push(interval);
+              } else {
+                merged[merged.length - 1].end = Math.max(merged[merged.length - 1].end, interval.end);
+              }
+            });
+            const coveredMinutes = merged.reduce((sum, interval) => sum + (interval.end - interval.start), 0);
+            coveragePercentage = Math.round((coveredMinutes / (24 * 60)) * 100);
+          }
+
           return (
             <button
               key={idx}
               onClick={() => handleDayClick(day)}
               disabled={!isClickable}
               className={`
-                relative p-1 sm:p-2 min-h-[80px] sm:min-h-[120px] text-left transition
+                relative p-1 sm:p-2 min-h-[80px] sm:min-h-[120px] text-left transition overflow-hidden
                 ${!isClickable ? 'bg-gray-900 opacity-40 cursor-default' : 'bg-gray-800 hover:bg-gray-750 cursor-pointer'}
                 ${dayIsHoliday && isCurrentMonth ? 'bg-yellow-900/10' : ''}
               `}
             >
-              {/* Numero del giorno */}
-              <div className="flex items-center justify-between mb-1">
-                <span className={`text-xs sm:text-sm font-medium ${
-                  dayIsToday 
-                    ? 'bg-purple-500 text-white w-6 h-6 rounded-full flex items-center justify-center' 
-                    : 'text-gray-300'
-                }`}>
-                  {format(day, 'd')}
-                </span>
-                {dayIsHoliday && isCurrentMonth && (
-                  <span className="text-xs">🎉</span>
-                )}
-              </div>
+              {/* Background fill based on coverage */}
+              {coveragePercentage > 0 && (
+                <div 
+                  className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-purple-500 to-purple-600 opacity-30 transition-all duration-300"
+                  style={{ height: `${coveragePercentage}%` }}
+                />
+              )}
 
-              {/* Eventi - Stile Google Calendar */}
-              <div className="space-y-0.5">
-                {/* Familiari */}
-                {dayEntries.slice(0, 3).map((entry, i) => (
-                  <div
-                    key={i}
-                    className={`text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded truncate font-medium ${
-                      entry.status === 'disponibile'
-                        ? 'bg-purple-600 text-white'
-                        : 'bg-red-600 text-white'
-                    }`}
-                    title={`${(entry.profiles as any)?.full_name}: ${entry.start_time}-${entry.end_time}`}
-                  >
-                    {entry.start_time && entry.end_time ? `${entry.start_time}` : ''}
-                  </div>
-                ))}
-                
-                {/* Badanti */}
-                {caregiverDayEntries.slice(0, 2).map((entry, i) => (
-                  <div
-                    key={i}
-                    className={`text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded truncate font-medium opacity-70 ${
-                      entry.status === 'disponibile'
-                        ? 'bg-green-600 text-white'
-                        : 'bg-red-600 text-white'
-                    }`}
-                    title={`Badante: ${(entry.profiles as any)?.full_name}: ${entry.start_time}-${entry.end_time}`}
-                  >
-                    {entry.start_time && entry.end_time ? `${entry.start_time}` : ''}
-                  </div>
-                ))}
+              {/* Content */}
+              <div className="relative z-10">
+                {/* Numero del giorno */}
+                <div className="flex items-center justify-between mb-1">
+                  <span className={`text-xs sm:text-sm font-medium ${
+                    dayIsToday 
+                      ? 'bg-purple-500 text-white w-6 h-6 rounded-full flex items-center justify-center' 
+                      : 'text-gray-300'
+                  }`}>
+                    {format(day, 'd')}
+                  </span>
+                  {dayIsHoliday && isCurrentMonth && (
+                    <span className="text-xs">🎉</span>
+                  )}
+                </div>
 
-                {/* Contatore eventi extra */}
-                {dayEntries.length + caregiverDayEntries.length > 5 && (
-                  <div className="text-[8px] sm:text-[9px] text-gray-400 font-medium">
-                    +{dayEntries.length + caregiverDayEntries.length - 5} altri
-                  </div>
-                )}
+                {/* Eventi - Stile Google Calendar */}
+                <div className="space-y-0.5">
+                  {/* Familiari */}
+                  {dayEntries.slice(0, 3).map((entry, i) => (
+                    <div
+                      key={i}
+                      className={`text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded truncate font-medium ${
+                        entry.status === 'disponibile'
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-red-600 text-white'
+                      }`}
+                      title={`${(entry.profiles as any)?.full_name}: ${entry.start_time}-${entry.end_time}`}
+                    >
+                      {entry.start_time && entry.end_time ? `${entry.start_time}-${entry.end_time}` : ''}
+                    </div>
+                  ))}
+                  
+                  {/* Badanti */}
+                  {caregiverDayEntries.slice(0, 2).map((entry, i) => (
+                    <div
+                      key={i}
+                      className={`text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded truncate font-medium opacity-70 ${
+                        entry.status === 'disponibile'
+                          ? 'bg-green-600 text-white'
+                          : 'bg-red-600 text-white'
+                      }`}
+                      title={`Badante: ${(entry.profiles as any)?.full_name}: ${entry.start_time}-${entry.end_time}`}
+                    >
+                      {entry.start_time && entry.end_time ? `${entry.start_time}-${entry.end_time}` : ''}
+                    </div>
+                  ))}
+
+                  {/* Contatore eventi extra */}
+                  {dayEntries.length + caregiverDayEntries.length > 5 && (
+                    <div className="text-[8px] sm:text-[9px] text-gray-400 font-medium">
+                      +{dayEntries.length + caregiverDayEntries.length - 5} altri
+                    </div>
+                  )}
+                </div>
               </div>
             </button>
           );

@@ -301,6 +301,7 @@ export default function Dashboard() {
             const entries = entriesByDate[dateStr] || [];
             const isCurrentMonth = isSameMonth(day, currentMonth);
             const dayIsToday = isToday(day);
+            const coverage = getDayCoverage(day);
 
             return (
               <button
@@ -308,46 +309,57 @@ export default function Dashboard() {
                 onClick={() => handleDayClick(day)}
                 disabled={!isCurrentMonth}
                 className={`
-                  relative p-1 sm:p-2 min-h-[80px] sm:min-h-[120px] text-left transition
+                  relative p-1 sm:p-2 min-h-[80px] sm:min-h-[120px] text-left transition overflow-hidden
                   ${!isCurrentMonth ? 'bg-gray-900 opacity-40 cursor-default' : 'bg-gray-800 hover:bg-gray-750 cursor-pointer'}
                 `}
               >
-                {/* Numero del giorno */}
-                <div className="flex items-center justify-between mb-1">
-                  <span className={`text-xs sm:text-sm font-medium ${
-                    dayIsToday 
-                      ? 'bg-indigo-500 text-white w-6 h-6 rounded-full flex items-center justify-center' 
-                      : 'text-gray-300'
-                  }`}>
-                    {format(day, 'd')}
-                  </span>
-                </div>
-
-                {/* Eventi - Stile Google Calendar */}
-                {entries.length > 0 && (
-                  <div className="space-y-0.5">
-                    {entries.slice(0, 4).map((entry, i) => (
-                      <div
-                        key={i}
-                        className={`text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded truncate font-medium ${
-                          entry.status === 'disponibile'
-                            ? entry.type === 'badante'
-                              ? 'bg-green-600 text-white'
-                              : 'bg-purple-600 text-white'
-                            : 'bg-red-600 text-white'
-                        }`}
-                        title={`${entry.full_name}: ${entry.start_time}-${entry.end_time}`}
-                      >
-                        {entry.start_time && entry.end_time ? `${entry.start_time}` : ''}
-                      </div>
-                    ))}
-                    {entries.length > 4 && (
-                      <div className="text-[8px] sm:text-[9px] text-gray-400 font-medium">
-                        +{entries.length - 4} altri
-                      </div>
-                    )}
-                  </div>
+                {/* Background fill based on coverage */}
+                {coverage.percentage > 0 && (
+                  <div 
+                    className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t ${coverage.color} opacity-30 transition-all duration-300`}
+                    style={{ height: `${coverage.percentage}%` }}
+                  />
                 )}
+
+                {/* Content */}
+                <div className="relative z-10">
+                  {/* Numero del giorno */}
+                  <div className="flex items-center justify-between mb-1">
+                    <span className={`text-xs sm:text-sm font-medium ${
+                      dayIsToday 
+                        ? 'bg-indigo-500 text-white w-6 h-6 rounded-full flex items-center justify-center' 
+                        : 'text-gray-300'
+                    }`}>
+                      {format(day, 'd')}
+                    </span>
+                  </div>
+
+                  {/* Eventi - Stile Google Calendar */}
+                  {entries.length > 0 && (
+                    <div className="space-y-0.5">
+                      {entries.slice(0, 4).map((entry, i) => (
+                        <div
+                          key={i}
+                          className={`text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded truncate font-medium ${
+                            entry.status === 'disponibile'
+                              ? entry.type === 'badante'
+                                ? 'bg-green-600 text-white'
+                                : 'bg-purple-600 text-white'
+                              : 'bg-red-600 text-white'
+                          }`}
+                          title={`${entry.full_name}: ${entry.start_time}-${entry.end_time}`}
+                        >
+                          {entry.start_time && entry.end_time ? `${entry.start_time}-${entry.end_time}` : ''}
+                        </div>
+                      ))}
+                      {entries.length > 4 && (
+                        <div className="text-[8px] sm:text-[9px] text-gray-400 font-medium">
+                          +{entries.length - 4} altri
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </button>
             );
           })}
