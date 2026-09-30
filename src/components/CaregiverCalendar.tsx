@@ -157,6 +157,7 @@ export default function CaregiverCalendar() {
   const { showLocalNotification } = usePushNotifications();
   const { refreshTrigger, triggerRefresh } = useCalendarSync();
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [availability, setAvailability] = useState<Record<string, AvailabilityEntry[]>>({});
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [modalStatus, setModalStatus] = useState<'disponibile' | 'non_disponibile'>('disponibile');
@@ -175,8 +176,20 @@ export default function CaregiverCalendar() {
       fetchAllAvailability();
       fetchAllFamilyAvailability();
       extendCaregiverAvailability(user.id, currentMonth);
+      setLastUpdate(new Date());
     }
   }, [user, currentMonth, refreshTrigger]);
+
+  // Funzione di refresh manuale
+  const handleManualRefresh = () => {
+    if (user) {
+      fetchMyAvailability();
+      fetchAllAvailability();
+      fetchAllFamilyAvailability();
+      setLastUpdate(new Date());
+      triggerRefresh();
+    }
+  };
 
   async function fetchMyAvailability() {
     const monthStart = format(startOfMonth(currentMonth), 'yyyy-MM-dd');
@@ -488,6 +501,13 @@ export default function CaregiverCalendar() {
             className="p-2 hover:bg-gray-800 rounded-lg transition text-gray-300"
           >
             →
+          </button>
+          <button
+            onClick={handleManualRefresh}
+            className="p-2 hover:bg-gray-800 rounded-lg transition text-gray-300"
+            title="Aggiorna calendario"
+          >
+            🔄
           </button>
         </div>
       </div>
