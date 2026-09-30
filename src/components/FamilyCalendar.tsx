@@ -109,6 +109,7 @@ export default function FamilyCalendar() {
   const { showLocalNotification } = usePushNotifications();
   const { refreshTrigger, triggerRefresh } = useCalendarSync();
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [availability, setAvailability] = useState<Record<string, { status: string; notes?: string; start_time?: string; end_time?: string }>>({});
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [modalStatus, setModalStatus] = useState<'disponibile' | 'non_disponibile'>('disponibile');
@@ -126,8 +127,20 @@ export default function FamilyCalendar() {
       fetchMyAvailability();
       fetchAllAvailability();
       fetchAllCaregiverAvailability();
+      setLastUpdate(new Date());
     }
   }, [user, currentMonth, refreshTrigger]);
+
+  // Funzione di refresh manuale
+  const handleManualRefresh = () => {
+    if (user) {
+      fetchMyAvailability();
+      fetchAllAvailability();
+      fetchAllCaregiverAvailability();
+      setLastUpdate(new Date());
+      triggerRefresh();
+    }
+  };
 
   async function fetchMyAvailability() {
     const monthStart = format(startOfMonth(currentMonth), 'yyyy-MM-dd');
@@ -398,6 +411,13 @@ export default function FamilyCalendar() {
             className="p-2 hover:bg-gray-800 rounded-lg transition text-gray-300"
           >
             →
+          </button>
+          <button
+            onClick={handleManualRefresh}
+            className="p-2 hover:bg-gray-800 rounded-lg transition text-gray-300"
+            title="Aggiorna calendario"
+          >
+            🔄
           </button>
         </div>
       </div>
