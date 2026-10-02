@@ -173,8 +173,8 @@ function AppContent() {
 
         {/* Page Content */}
         {page === 'dashboard' && <Dashboard />}
-        {page === 'caregiver' && profile?.role === 'badante' && <CaregiverCalendar />}
-        {page === 'family' && profile?.role === 'familiare' && <FamilyCalendar />}
+        {page === 'caregiver' && (profile?.role === 'badante' || profile?.role === 'superuser') && <CaregiverCalendar />}
+        {page === 'family' && (profile?.role === 'familiare' || profile?.role === 'superuser') && <FamilyCalendar />}
         {page === 'admin' && profile?.role === 'superuser' && <AdminPanel />}
       </main>
 
