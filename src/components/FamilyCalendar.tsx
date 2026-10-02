@@ -257,6 +257,8 @@ export default function FamilyCalendar() {
     if (!selectedDate || !user) return;
     const dateStr = format(selectedDate, 'yyyy-MM-dd');
 
+    const existing = availability[dateStr];
+
     // Se è una disponibilità, valida che sia in un intervallo scoperto
     if (modalStatus === 'disponibile') {
       const timeToMinutes = (time: string) => {
@@ -278,6 +280,15 @@ export default function FamilyCalendar() {
         alert('⚠️ L\'orario inserito si sovrappone a una disponibilità esistente. Inserisci solo orari scoperti.');
         return;
       }
+    }
+
+    // Controlla se esiste già una registrazione identica (duplicato)
+    if (existing && 
+        existing.status === modalStatus &&
+        existing.start_time === modalStartTime &&
+        existing.end_time === modalEndTime) {
+      alert('⚠️ Esiste già una registrazione identica per questo giorno e orario.');
+      return;
     }
 
     const timeInfo = `dalle ${modalStartTime} alle ${modalEndTime}`;
