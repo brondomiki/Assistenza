@@ -38,6 +38,35 @@ function isItalianHoliday(date: Date): boolean {
   return holidays.includes(dateStr);
 }
 
+// Funzione per generare un colore unico basato sull'ID utente
+function getUserColor(userId: string): string {
+  const colors = [
+    'bg-blue-600',
+    'bg-green-600',
+    'bg-purple-600',
+    'bg-pink-600',
+    'bg-indigo-600',
+    'bg-teal-600',
+    'bg-orange-600',
+    'bg-cyan-600',
+    'bg-emerald-600',
+    'bg-violet-600',
+    'bg-rose-600',
+    'bg-amber-600',
+    'bg-lime-600',
+    'bg-sky-600',
+    'bg-fuchsia-600',
+  ];
+  
+  // Usa l'hash dell'ID per selezionare un colore
+  let hash = 0;
+  for (let i = 0; i < userId.length; i++) {
+    hash = userId.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % colors.length;
+  return colors[index];
+}
+
 // Funzione per calcolare gli intervalli scoperti
 function calculateUncoveredIntervals(
   existingIntervals: Array<{ start_time: string; end_time: string; status: string }>
@@ -495,34 +524,32 @@ export default function FamilyCalendar() {
                 {/* Eventi - Stile Google Calendar */}
                 <div className="space-y-0.5">
                   {/* Familiari */}
-                  {dayEntries.slice(0, 3).map((entry, i) => (
-                    <div
-                      key={i}
-                      className={`text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded truncate font-medium ${
-                        entry.status === 'disponibile'
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-red-600 text-white'
-                      }`}
-                      title={`${(entry.profiles as any)?.full_name}: ${entry.start_time}-${entry.end_time}`}
-                    >
-                      {entry.start_time && entry.end_time ? `${entry.start_time}-${entry.end_time}` : ''}
-                    </div>
-                  ))}
+                  {dayEntries.slice(0, 3).map((entry, i) => {
+                    const userColor = entry.status === 'disponibile' ? getUserColor(entry.user_id) : 'bg-red-600';
+                    return (
+                      <div
+                        key={i}
+                        className={`text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded truncate font-medium ${userColor} text-white`}
+                        title={`${(entry.profiles as any)?.full_name}: ${entry.start_time}-${entry.end_time}`}
+                      >
+                        {entry.start_time && entry.end_time ? `${entry.start_time}-${entry.end_time}` : ''}
+                      </div>
+                    );
+                  })}
                   
                   {/* Badanti */}
-                  {caregiverDayEntries.slice(0, 2).map((entry, i) => (
-                    <div
-                      key={i}
-                      className={`text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded truncate font-medium opacity-70 ${
-                        entry.status === 'disponibile'
-                          ? 'bg-green-600 text-white'
-                          : 'bg-red-600 text-white'
-                      }`}
-                      title={`Badante: ${(entry.profiles as any)?.full_name}: ${entry.start_time}-${entry.end_time}`}
-                    >
-                      {entry.start_time && entry.end_time ? `${entry.start_time}-${entry.end_time}` : ''}
-                    </div>
-                  ))}
+                  {caregiverDayEntries.slice(0, 2).map((entry, i) => {
+                    const userColor = entry.status === 'disponibile' ? getUserColor(entry.user_id) : 'bg-red-600';
+                    return (
+                      <div
+                        key={i}
+                        className={`text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded truncate font-medium opacity-70 ${userColor} text-white`}
+                        title={`Badante: ${(entry.profiles as any)?.full_name}: ${entry.start_time}-${entry.end_time}`}
+                      >
+                        {entry.start_time && entry.end_time ? `${entry.start_time}-${entry.end_time}` : ''}
+                      </div>
+                    );
+                  })}
 
                   {/* Contatore eventi extra */}
                   {dayEntries.length + caregiverDayEntries.length > 5 && (

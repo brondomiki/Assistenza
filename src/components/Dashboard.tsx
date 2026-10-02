@@ -16,6 +16,35 @@ import {
   subMonths,
 } from 'date-fns';
 import { it } from 'date-fns/locale';
+
+// Funzione per generare un colore unico basato sull'ID utente
+function getUserColor(userId: string): string {
+  const colors = [
+    'bg-blue-600',
+    'bg-green-600',
+    'bg-purple-600',
+    'bg-pink-600',
+    'bg-indigo-600',
+    'bg-teal-600',
+    'bg-orange-600',
+    'bg-cyan-600',
+    'bg-emerald-600',
+    'bg-violet-600',
+    'bg-rose-600',
+    'bg-amber-600',
+    'bg-lime-600',
+    'bg-sky-600',
+    'bg-fuchsia-600',
+  ];
+  
+  // Usa l'hash dell'ID per selezionare un colore
+  let hash = 0;
+  for (let i = 0; i < userId.length; i++) {
+    hash = userId.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % colors.length;
+  return colors[index];
+}
 import { extendCaregiverAvailability } from '../lib/availabilityExtender';
 
 // Italian public holidays
@@ -347,21 +376,18 @@ export default function Dashboard() {
                   {/* Eventi - Stile Google Calendar */}
                   {entries.length > 0 && (
                     <div className="space-y-0.5">
-                      {entries.slice(0, 4).map((entry, i) => (
-                        <div
-                          key={i}
-                          className={`text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded truncate font-medium ${
-                            entry.status === 'disponibile'
-                              ? entry.type === 'badante'
-                                ? 'bg-green-600 text-white'
-                                : 'bg-purple-600 text-white'
-                              : 'bg-red-600 text-white'
-                          }`}
-                          title={`${entry.full_name}: ${entry.start_time}-${entry.end_time}`}
-                        >
-                          {entry.start_time && entry.end_time ? `${entry.start_time}-${entry.end_time}` : ''}
-                        </div>
-                      ))}
+                      {entries.slice(0, 4).map((entry, i) => {
+                        const userColor = entry.status === 'disponibile' ? getUserColor(entry.user_id) : 'bg-red-600';
+                        return (
+                          <div
+                            key={i}
+                            className={`text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded truncate font-medium ${userColor} text-white`}
+                            title={`${entry.full_name}: ${entry.start_time}-${entry.end_time}`}
+                          >
+                            {entry.start_time && entry.end_time ? `${entry.start_time}-${entry.end_time}` : ''}
+                          </div>
+                        );
+                      })}
                       {entries.length > 4 && (
                         <div className="text-[8px] sm:text-[9px] text-gray-400 font-medium">
                           +{entries.length - 4} altri
