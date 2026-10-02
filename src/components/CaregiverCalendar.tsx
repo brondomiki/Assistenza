@@ -19,6 +19,35 @@ import {
 import { it } from 'date-fns/locale';
 import { extendCaregiverAvailability } from '../lib/availabilityExtender';
 
+// Funzione per generare un colore unico basato sull'ID utente
+function getUserColor(userId: string): string {
+  const colors = [
+    'bg-blue-600',
+    'bg-green-600',
+    'bg-purple-600',
+    'bg-pink-600',
+    'bg-indigo-600',
+    'bg-teal-600',
+    'bg-orange-600',
+    'bg-cyan-600',
+    'bg-emerald-600',
+    'bg-violet-600',
+    'bg-rose-600',
+    'bg-amber-600',
+    'bg-lime-600',
+    'bg-sky-600',
+    'bg-fuchsia-600',
+  ];
+  
+  // Usa l'hash dell'ID per selezionare un colore
+  let hash = 0;
+  for (let i = 0; i < userId.length; i++) {
+    hash = userId.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % colors.length;
+  return colors[index];
+}
+
 type AvailabilityEntry = {
   id: string;
   status: string;
@@ -290,6 +319,20 @@ export default function CaregiverCalendar() {
       
       const newStart = timeToMinutes(modalStartTime);
       const newEnd = timeToMinutes(modalEndTime);
+      
+      // Controlla se l'utente ha già una disponibilità che si sovrappone
+      const hasOverlap = existingEntries.some(entry => {
+        if (entry.status !== 'disponibile') return false;
+        const entryStart = timeToMinutes(entry.start_time || '00:00');
+        const entryEnd = timeToMinutes(entry.end_time || '24:00');
+        // Verifica sovrapposizione
+        return !(newEnd <= entryStart || newStart >= entryEnd);
+      });
+      
+      if (hasOverlap) {
+        alert('⚠️ Hai già una disponibilità in questo intervallo orario. Non puoi inserire disponibilità sovrapposte.');
+        return;
+      }
       
       // Controlla se l'intervallo è completamente contenuto in un intervallo scoperto
       const isValid = uncoveredIntervals.some(interval => {
@@ -574,34 +617,32 @@ export default function CaregiverCalendar() {
                 {/* Eventi - Stile Google Calendar */}
                 <div className="space-y-0.5">
                   {/* Badanti */}
-                  {dayEntries.slice(0, 3).map((entry, i) => (
-                    <div
-                      key={i}
-                      className={`text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded truncate font-medium ${
-                        entry.status === 'disponibile'
-                          ? 'bg-green-600 text-white'
-                          : 'bg-red-600 text-white'
-                      }`}
-                      title={`${(entry.profiles as any)?.full_name}: ${entry.start_time}-${entry.end_time}`}
-                    >
-                      {entry.start_time && entry.end_time ? `${entry.start_time}-${entry.end_time}` : ''}
-                    </div>
-                  ))}
+                  {dayEntries.slice(0, 3).map((entry, i) => {
+                    const userColor = entry.status === 'disponibile' ? getUserColor(entry.user_id) : 'bg-red-600';
+                    return (
+                      <div
+                        key={i}
+                        className={`text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded truncate font-medium ${userColor} text-white`}
+                        title={`${(entry.profiles as any)?.full_name}: ${entry.start_time}-${entry.end_time}`}
+                      >
+                        {entry.start_time && entry.end_time ? `${entry.start_time}-${entry.end_time}` : ''}
+                      </div>
+                    );
+                  })}
                   
                   {/* Familiari */}
-                  {familyDayEntries.slice(0, 2).map((entry, i) => (
-                    <div
-                      key={i}
-                      className={`text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded truncate font-medium opacity-70 ${
-                        entry.status === 'disponibile'
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-red-600 text-white'
-                      }`}
-                      title={`Familiare: ${(entry.profiles as any)?.full_name}: ${entry.start_time}-${entry.end_time}`}
-                    >
-                      {entry.start_time && entry.end_time ? `${entry.start_time}-${entry.end_time}` : ''}
-                    </div>
-                  ))}
+                  {familyDayEntries.slice(0, 2).map((entry, i) => {
+                    const userColor = entry.status === 'disponibile' ? getUserColor(entry.user_id) : 'bg-red-600';
+                    return (
+                      <div
+                        key={i}
+                        className={`text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded truncate font-medium opacity-70 ${userColor} text-white`}
+                        title={`Familiare: ${(entry.profiles as any)?.full_name}: ${entry.start_time}-${entry.end_time}`}
+                      >
+                        {entry.start_time && entry.end_time ? `${entry.start_time}-${entry.end_time}` : ''}
+                      </div>
+                    );
+                  })}
 
                   {/* Contatore eventi extra */}
                   {dayEntries.length + familyDayEntries.length > 5 && (
