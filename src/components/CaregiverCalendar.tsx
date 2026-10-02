@@ -347,6 +347,18 @@ export default function CaregiverCalendar() {
       }
     }
     
+    // Controlla se esiste già una registrazione identica (duplicato)
+    const isDuplicate = existingEntries.some(entry => 
+      entry.status === modalStatus &&
+      entry.start_time === modalStartTime &&
+      entry.end_time === modalEndTime
+    );
+    
+    if (isDuplicate) {
+      alert('⚠️ Esiste già una registrazione identica per questo giorno e orario.');
+      return;
+    }
+    
     // Se è una non disponibilità, calcola lo split automatico
     if (modalStatus === 'non_disponibile' && existingEntries.length > 0) {
       const newInterval = {
