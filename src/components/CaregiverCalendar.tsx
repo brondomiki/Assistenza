@@ -685,45 +685,59 @@ export default function CaregiverCalendar() {
       </div>
 
       {showModal && selectedDate && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 rounded-2xl p-6 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto border border-gray-700">
-            <h3 className="text-lg font-bold text-white mb-2">
-              {format(selectedDate, 'EEEE dd MMMM yyyy', { locale: it })}
-            </h3>
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-gray-900 rounded-2xl w-full max-w-md shadow-2xl max-h-[95vh] flex flex-col border border-gray-700">
+            {/* Header fisso */}
+            <div className="p-4 border-b border-gray-700 flex-shrink-0">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-base sm:text-lg font-bold text-white">
+                  {format(selectedDate, 'EEEE dd MMMM yyyy', { locale: it })}
+                </h3>
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="text-gray-400 hover:text-white text-2xl leading-none"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
 
-            {/* Mostra fasce orarie esistenti */}
-            {selectedDate && availability[format(selectedDate, 'yyyy-MM-dd')]?.length > 0 && (
-              <div className="bg-gray-800 rounded-lg p-4 mb-4">
-                <h4 className="text-sm font-medium text-gray-300 mb-2">Fasce orarie esistenti:</h4>
-                <div className="space-y-2">
-                  {availability[format(selectedDate, 'yyyy-MM-dd')].map((entry) => (
-                    <div key={entry.id} className="flex items-center justify-between bg-gray-700 rounded p-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-200">
-                          {entry.start_time} - {entry.end_time}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className={`text-xs px-2 py-1 rounded ${
-                          entry.status === 'disponibile' 
-                            ? 'bg-green-600 text-white' 
-                            : 'bg-red-600 text-white'
-                        }`}>
-                          {entry.status === 'disponibile' ? '✓' : '✗'}
-                        </span>
+            {/* Contenuto scrollabile */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {/* Mostra fasce orarie esistenti */}
+              {selectedDate && availability[format(selectedDate, 'yyyy-MM-dd')]?.length > 0 && (
+                <div className="bg-gray-800 rounded-lg p-3 sm:p-4">
+                  <h4 className="text-sm font-medium text-gray-300 mb-3">Le tue fasce orarie:</h4>
+                  <div className="space-y-2">
+                    {availability[format(selectedDate, 'yyyy-MM-dd')].map((entry) => (
+                      <div key={entry.id} className="flex items-center justify-between bg-gray-700 rounded-lg p-3 gap-2">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <span className={`text-xs px-2 py-1 rounded flex-shrink-0 ${
+                            entry.status === 'disponibile' 
+                              ? 'bg-green-600 text-white' 
+                              : 'bg-red-600 text-white'
+                          }`}>
+                            {entry.status === 'disponibile' ? '✓' : '✗'}
+                          </span>
+                          <span className="text-sm text-gray-200 truncate">
+                            {entry.start_time} - {entry.end_time}
+                          </span>
+                        </div>
                         <button
-                          onClick={() => removeEntry(entry.id)}
-                          className="text-red-400 hover:text-red-300 text-xs"
-                          title="Rimuovi questa fascia"
+                          onClick={() => {
+                            if (confirm('Eliminare questa fascia oraria?')) {
+                              removeEntry(entry.id);
+                            }
+                          }}
+                          className="flex-shrink-0 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
                         >
                           🗑️
                         </button>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
             {/* Analisi copertura oraria */}
             {selectedDate && (() => {
@@ -965,6 +979,7 @@ export default function CaregiverCalendar() {
                   </button>
                 </div>
               </div>
+            </div>
             </div>
           </div>
         </div>
